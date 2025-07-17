@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace App.Repositories
+namespace App.Repositories.Products
 {
     public class ProductConfiguration : IEntityTypeConfiguration<Product>
     {
@@ -21,7 +21,7 @@ namespace App.Repositories
 
             builder.Property(p => p.Type)
                    .IsRequired()
-                   .HasConversion<string>(); // Enum ise string olarak saklar
+                   .HasConversion<string>();
 
             builder.Property(p => p.Unit)
                    .IsRequired()
@@ -39,9 +39,16 @@ namespace App.Repositories
                    .HasDefaultValue(true);
 
             builder.Property(p => p.CreatedDate)
-                   .HasColumnType("datetime") // datetime(6) yerine sadece datetime
+                   .HasColumnType("datetime")
                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            builder.HasOne(p => p.Category)
+                   .WithMany(c => c.Products)
+                   .HasForeignKey(p => p.CategoryId);
+
+            builder.HasOne(p => p.Supplier)
+                   .WithMany(s => s.Products)
+                   .HasForeignKey(p => p.SupplierId);
         }
     }
 }
-
