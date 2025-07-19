@@ -1,4 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using App.Repositories.Categories;
+using App.Repositories.ProductionLogs;
+using App.Repositories.Products;
+using App.Repositories.RecipeItems;
+using App.Repositories.StockTransactions;
+using App.Repositories.Suppliers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -27,7 +33,13 @@ namespace App.Repositories.Extensions
                     });
 
             });
-
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<ICategoryRepository,CategoryRepository>();
+            services.AddScoped<IProductionLogRepository, ProductionLogRepository>();
+            services.AddScoped<IRecipeItemRepository, RecipeItemRepository>();
+            services.AddScoped<IStockTransactionRepository, StockTransactionRepository>();
+            services.AddScoped<ISupplierRepository, SupplierRepository>();
+            services.AddScoped(typeof (IGenericRepository<>), typeof (GenericRepository<>));
             return services;
         }
     }

@@ -1,5 +1,6 @@
 using App.Repositories;
 using App.Repositories.Extensions;
+using App.Services.ServiceExtensions;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Storage.Internal;
 
@@ -13,7 +14,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddRepositories(builder.Configuration);
+builder.Services.AddRepositories(builder.Configuration).AddServices(builder.Configuration);
 
 
 var app = builder.Build();

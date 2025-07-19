@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace App.Services
+namespace App.Services.ProductServices
 {
-    public class ProductService(IProductRepository productRepository)
+    public class ProductService(IProductRepository productRepository):IProductService
     {
 
     }
