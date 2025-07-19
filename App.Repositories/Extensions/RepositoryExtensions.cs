@@ -39,6 +39,7 @@ namespace App.Repositories.Extensions
             services.AddScoped<IRecipeItemRepository, RecipeItemRepository>();
             services.AddScoped<IStockTransactionRepository, StockTransactionRepository>();
             services.AddScoped<ISupplierRepository, SupplierRepository>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped(typeof (IGenericRepository<>), typeof (GenericRepository<>));
             return services;
         }
