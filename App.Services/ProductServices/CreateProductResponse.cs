@@ -4,10 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace App.Repositories
+namespace App.Services.ProductServices
 {
-    public interface IUnitOfWork
-    {
-        Task<int> SaveChangesAsync();
-    }
+    public record class CreateProductResponse(int Id);
+  
 }

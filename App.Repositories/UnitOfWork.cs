@@ -8,6 +8,7 @@ namespace App.Repositories
 {
     public class UnitOfWork(AppDbContext context) : IUnitOfWork
     {
-        public Task<int> SaveChangesAsycn() => context.SaveChangesAsync(); // await koymama gerek yok zaten arka planda o şekilde çalışcak
+        public Task<int> SaveChangesAsync() => context.SaveChangesAsync(); // await koymama gerek yok zaten arka planda o şekilde çalışcak
+
     }
 }

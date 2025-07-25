@@ -7,7 +7,14 @@ using System.Threading.Tasks;
 
 namespace App.Services.ProductServices
 {
-
-    public record class ProductDto(int Id, string Name, decimal Price);
+    public record class UpdateProductRequest(
+    string Name,
+    ProductType Type,
+    string Unit,
+    decimal Price,
+    decimal StockQuantity,
+    bool IsActive,
+    DateTime CreatedDate
+);
 
 }
