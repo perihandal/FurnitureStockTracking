@@ -1,9 +1,7 @@
-﻿using App.Repositories.Categories;
-using App.Repositories.ProductionLogs;
-using App.Repositories.Products;
-using App.Repositories.RecipeItems;
+﻿using App.Repositories.Warehauses;
+using App.Repositories.Categories;
+using App.Repositories.Companies;
 using App.Repositories.StockTransactions;
-using App.Repositories.Suppliers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +10,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using App.Repositories.MainGroups;
+using App.Repositories.StockCards;
+using App.Repositories.Branches;
+using App.Repositories.PriceDefinitions;
+using AApp.Repositories.StockCards;
+using App.Repositories.BarcodeCards;
+using App.Repositories.SubGroups;
 
 namespace App.Repositories.Extensions
 {
@@ -33,12 +38,15 @@ namespace App.Repositories.Extensions
                     });
 
             });
-            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<IStockCardRepository, StockCardRepository>();
             services.AddScoped<ICategoryRepository,CategoryRepository>();
-            services.AddScoped<IProductionLogRepository, ProductionLogRepository>();
-            services.AddScoped<IRecipeItemRepository, RecipeItemRepository>();
+            services.AddScoped<IBranchRepository, BranchRepository>();
+            services.AddScoped<IMainGroupRepository, MainGroupRepository>();
+            services.AddScoped<ISubGroupRepository, SubGroupRepository>();
+            services.AddScoped<IPriceDefinitionRepository, PriceDefinitionRepository>();
             services.AddScoped<IStockTransactionRepository, StockTransactionRepository>();
-            services.AddScoped<ISupplierRepository, SupplierRepository>();
+            services.AddScoped<IBarcodeCardRepository, BarcodeCardRepository>();
+            services.AddScoped<ICompanyRepository, CompanyRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped(typeof (IGenericRepository<>), typeof (GenericRepository<>));
             return services;

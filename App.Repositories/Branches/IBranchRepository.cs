@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace App.Repositories.Categories
+namespace App.Repositories.Branches
 {
-    public interface ICategoryRepository: IGenericRepository<Category>
+    public interface IBranchRepository : IGenericRepository<Branch>
     {
     }
 }

@@ -1,10 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace App.Repositories.StockTransactions
 {
@@ -12,20 +7,37 @@ namespace App.Repositories.StockTransactions
     {
         public void Configure(EntityTypeBuilder<StockTransaction> builder)
         {
-            builder.HasKey(s => s.Id);
+            builder.ToTable("StockTransactions");
 
-            builder.Property(s => s.Change).IsRequired();
-            builder.Property(s => s.Description).IsRequired().HasMaxLength(200);
-            builder.Property(s => s.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("CURRENT_TIMESTAMP");
+            builder.HasKey(st => st.Id);
 
-            builder.HasOne(s => s.Product)
-                   .WithMany(p => p.StockTransactions)
-                   .HasForeignKey(s => s.ProductId);
+            builder.Property(st => st.TransactionType)
+                   .IsRequired()
+                   .HasMaxLength(20); // "Giris", "Cikis", "Transfer" gibi tipler olacak.
 
-            builder.HasOne(s => s.CreatedByUser)
-                   .WithMany(u => u.StockTransactions)
-                   .HasForeignKey(s => s.CreatedByUserId);
+            builder.Property(st => st.Quantity)
+                   .IsRequired()
+                   .HasColumnType("decimal(18,2)");
+
+            builder.Property(st => st.TransactionDate)
+                   .HasColumnType("datetime")
+                   .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            builder.Property(st => st.DocumentNumber)
+                   .HasMaxLength(50);
+
+            builder.Property(st => st.Description)
+                   .HasMaxLength(500);
+
+            builder.HasOne(st => st.StockCard)
+                   .WithMany(sc => sc.StockTransactions)
+                   .HasForeignKey(st => st.StockCardId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(st => st.Warehouse)
+                   .WithMany()
+                   .HasForeignKey(st => st.WarehouseId)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
-
 }

@@ -4,9 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace App.Repositories.Categories
+namespace App.Services.StockCardServices
 {
-    public interface ICategoryRepository: IGenericRepository<Category>
-    {
-    }
+    public record class CreateStockCardResponse(int Id);
+  
 }

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace App.Repositories.Categories
+namespace App.Repositories.MainGroups
 {
-    public interface ICategoryRepository: IGenericRepository<Category>
+    public interface IMainGroupRepository : IGenericRepository<MainGroup>
     {
     }
 }

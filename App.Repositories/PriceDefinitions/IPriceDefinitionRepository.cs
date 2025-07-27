@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace App.Repositories.Categories
+namespace App.Repositories.PriceDefinitions
 {
-    public interface ICategoryRepository: IGenericRepository<Category>
+   public interface IPriceDefinitionRepository: IGenericRepository<PriceDefinition>
     {
     }
 }

@@ -1,9 +1,4 @@
 ﻿using App.Repositories.Categories;
-using App.Repositories.ProductionLogs;
-using App.Repositories.Products;
-using App.Repositories.RecipeItems;
-using App.Repositories.StockTransactions;
-using App.Repositories.Suppliers;
 using App.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using App.Services.ProductServices;
+using App.Services.StockCardServices;
 
 namespace App.Services.ServiceExtensions
 {
@@ -21,7 +16,7 @@ namespace App.Services.ServiceExtensions
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
         {
 
-            services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IStockCardService, StockCardService>();
 
             // services.AddScoped<ICategoryService, CategoryService>();
             // services.AddScoped<IProductionLogService, ProductionLogService>();

@@ -1,10 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace App.Repositories.Categories
 {
@@ -12,10 +7,25 @@ namespace App.Repositories.Categories
     {
         public void Configure(EntityTypeBuilder<Category> builder)
         {
+            builder.ToTable("Categories");
+
             builder.HasKey(c => c.Id);
+
+            builder.Property(c => c.Code)
+                   .IsRequired()
+                   .HasMaxLength(20);
+
             builder.Property(c => c.Name)
                    .IsRequired()
-                   .HasMaxLength(50);
+                   .HasMaxLength(200);
+
+            builder.Property(c => c.IsActive)
+                   .HasDefaultValue(true);
+
+            builder.HasMany(c => c.StockCards)
+                   .WithOne(sc => sc.Category)
+                   .HasForeignKey(sc => sc.CategoryId)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
