@@ -8,12 +8,17 @@ using System.Threading.Tasks;
 namespace App.Services.StockCardServices
 {
     public record class UpdateStockCardRequest(
-    string Name,
-    string Unit,
-    decimal Price,
-    decimal StockQuantity,
-    bool IsActive,
-    DateTime CreatedDate
+        string Name,
+        string Code,
+        StockCardType Type,
+        string Unit,
+        decimal Tax,
+        bool IsActive,
+        int CompanyId,
+        int BranchId,
+        int MainGroupId,
+        int? SubGroupId,
+        int? CategoryId
 );
 
 }

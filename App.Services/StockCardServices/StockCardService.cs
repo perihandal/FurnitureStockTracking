@@ -14,17 +14,17 @@ namespace App.Services.StockCardServices
 {
     public class StockCardService(IStockCardRepository stockcardRepository, IUnitOfWork unitOfWork) : IStockCardService
     {
-        //public async Task<ServiceResult<List<StockCardDto>>> GetTopPriceASync(int count)
-        //{
-        //    var stockcards = await stockcardRepository.GetTopPriceProductsAsync(count);
+        public async Task<ServiceResult<List<StockCardDto>>> GetTopPriceASync(int count)
+        {
+            var stockcards = await stockcardRepository.GetTopPriceProductsAsync(count);
 
-        //    var productsAsDto = stockcards.Select(p => new StockCardDto(p.Id, p.Name, p.Price)).ToList();
+            var productsAsDto = stockcards.Select(p => new StockCardDto(p.Id, p.Name)).ToList();
 
-        //    return new ServiceResult<List<StockCardDto>>()
-        //    {
-        //        Data = productsAsDto
-        //    };
-        //}
+            return new ServiceResult<List<StockCardDto>>()
+            {
+                Data = productsAsDto
+            };
+        }
         //public async Task<ServiceResult<StockCardDto?>> GetByIdAsync(int id)
         //{
         //    var stockcard = await stockcardRepository.GetByIdAsync(id);
@@ -40,62 +40,81 @@ namespace App.Services.StockCardServices
 
         //}
 
-        //public async Task<ServiceResult<CreateStockCardResponse>> CreateAsync(CreateStockCardRequest request)
-        //{
-        //    var stockcard = new StockCard()
-        //    {
-        //        Name = request.Name,
-        //        Price = request.Price,
-        //        StockQuantity = request.StockQuantity,
-        //        Unit = request.Unit,
-        //        Type = request.Type,
-        //        CategoryId = request.CategoryId,
-        //        SupplierId = request.SupplierId,
+        public async Task<ServiceResult<CreateStockCardResponse>> CreateAsync(CreateStockCardRequest request)
+        {
+            var stockcard = new StockCard()
+            {
+                Name = request.Name,
+                Code = request.Code,
+                Tax = request.Tax,
+                Type = request.Type,
+                Unit = request.Unit,
+                SubGroupId = request.SubGroupId,
+                CompanyId = request.CompanyId,
+                MainGroupId = request.MainGroupId,  
+                BranchId = request.BranchId,
+                CategoryId = request.CategoryId,
 
-        //        // default değerler:
-        //        IsActive = true,
-        //        CreatedDate = DateTime.UtcNow
-        //    };
+                // default değerler:
+                IsActive = true,
+                CreatedDate = DateTime.UtcNow
+            };
 
-        //    await stockcardRepository.AddAsync(stockcard);
+            await stockcardRepository.AddAsync(stockcard);
 
-        //    await unitOfWork.SaveChangesAsync();
+            await unitOfWork.SaveChangesAsync();
 
-        //    return ServiceResult<CreateStockCardResponse>.Success(new CreateStockCardResponse(stockcard.Id));
-        //}
+            return ServiceResult<CreateStockCardResponse>.Success(new CreateStockCardResponse(stockcard.Id));
+        }
 
-        //public async Task<ServiceResult> UpdateAsync(int id, UpdateStockCardRequest request)
-        //{
-        //    var product = await stockcardRepository.GetByIdAsync(id);
+        public async Task<ServiceResult> UpdateAsync(int id, UpdateStockCardRequest request)
+        {
+            var stockcard = await stockcardRepository.GetByIdAsync(id);
 
-        //    if (product == null)
-        //    {
-        //        return ServiceResult.Fail("Product not found", HttpStatusCode.NotFound);
-        //    }
+            if (stockcard == null)
+            {
+                return ServiceResult.Fail("Product not found", HttpStatusCode.NotFound);
+            }
+            stockcard.Name = request.Name;
+            stockcard.Code = request.Code;
+            stockcard.Tax = request.Tax;
+            stockcard.Type = request.Type;
+            stockcard.Unit = request.Unit;
+            stockcard.SubGroupId = request.SubGroupId;
+            stockcard.CompanyId = request.CompanyId;
+            stockcard.MainGroupId = request.MainGroupId;
+            stockcard.BranchId = request.BranchId;
+            stockcard.CategoryId = request.CategoryId;
+            stockcard.IsActive = request.IsActive;
+            stockcard.CreatedDate = DateTime.UtcNow;
 
-        //    product.Name = request.Name;
-        //    product.Type = request.Type;
-        //    product.Unit = request.Unit;
-        //    //product.Price = request.Price;
-        //    //product.StockQuantity = request.StockQuantity;
-        //    //product.IsActive = request.IsActive;
-        //    product.CreatedDate = DateTime.UtcNow;
-
-        //    stockcardRepository.Update(product);
-        //    await unitOfWork.SaveChangesAsync();
-        //    return ServiceResult.Success(HttpStatusCode.NoContent);
+            stockcardRepository.Update(stockcard);
+            await unitOfWork.SaveChangesAsync();
+            return ServiceResult.Success(HttpStatusCode.NoContent);
 
 
-        //}
+        }
+        public async Task<ServiceResult<List<StockCardDto>>> GetAllList()
+        {
+            var stockcards = await stockcardRepository.GetAllWithDetailsAsync();
 
-        //public async Task<ServiceResult<List<StockCardDto>>> GetAllList()
-        //{
-        //    var products = await stockcardRepository.GetAll().ToListAsync();
+            var stockcardAsDto = stockcards.Select(p => new StockCardDto(
+               p.Id,
+               p.Name
+               //p.Code,
+               //p.Type,
+               //p.Unit,
+               //p.Tax,
+               //p.CreatedDate,
+               //p.Company.Name,
+               //p.Branch.Name,
+               //p.MainGroup.Name,
+               //p.SubGroup?.Name,
+               //p.Category?.Name
+            )).ToList();
 
-        //    var productAsDto = products.Select(p => new StockCardDto(p.Id, p.Name, p.Price)).ToList();
+            return ServiceResult<List<StockCardDto>>.Success(stockcardAsDto);
+        }
 
-        //    return ServiceResult<List<StockCardDto>>.Success(productAsDto);
-
-        //}
     }
 }

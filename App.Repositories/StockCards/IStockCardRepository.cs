@@ -9,6 +9,7 @@ namespace App.Repositories.StockCards
 {
     public interface IStockCardRepository :IGenericRepository<StockCard>
     {
-        //Task<List<StockCard>> GetTopPriceProductsAsync(int count);
+        Task<List<StockCard>> GetTopPriceProductsAsync(int count);
+        Task<List<StockCard>> GetAllWithDetailsAsync();
     }
 }

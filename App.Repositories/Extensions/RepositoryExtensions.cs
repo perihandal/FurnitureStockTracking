@@ -14,7 +14,6 @@ using App.Repositories.MainGroups;
 using App.Repositories.StockCards;
 using App.Repositories.Branches;
 using App.Repositories.PriceDefinitions;
-using AApp.Repositories.StockCards;
 using App.Repositories.BarcodeCards;
 using App.Repositories.SubGroups;
 
