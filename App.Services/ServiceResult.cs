@@ -13,11 +13,14 @@ namespace App.Services
         public T? Data { get; set; }
 
         public List<string>? ErrorMessage { get; set; }
-        public bool IsSuccess() =>  ErrorMessage == null || ErrorMessage.Count == 0;
 
-        public bool IsFail => !IsSuccess();
+        [JsonIgnore]
+        public bool IsSuccess => ErrorMessage == null || ErrorMessage.Count == 0;
 
-        public HttpStatusCode Status { get; set; }
+
+        [JsonIgnore] public bool IsFail => !IsSuccess;
+
+        [JsonIgnore] public HttpStatusCode Status { get; set; }
 
         //static factory method
         public static ServiceResult<T> Success(T data, HttpStatusCode status=HttpStatusCode.OK)
