@@ -10,7 +10,7 @@ namespace App.API.Controllers
         [HttpGet] //---> istek yaparken
         public async Task<IActionResult> GetAll() => CreateActionResult(await stockcardService.GetAllList());
         [HttpGet("{count}")]
-        public async Task<IActionResult> GetTopPriceASync() => CreateActionResult(await stockcardService.GetAllList());
+        //public async Task<IActionResult> GetTopPriceASync() => CreateActionResult(await stockcardService.GetAllList());
         //[HttpGet("{id}")]
         //public async Task<IActionResult> GetById(int id) => CreateActionResult(await productService.GetByIdAsync(id));
         [HttpPost]//--->eklme yaparken

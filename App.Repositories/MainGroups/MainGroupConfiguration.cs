@@ -15,6 +15,9 @@ namespace App.Repositories.MainGroups
                    .IsRequired()
                    .HasMaxLength(20);
 
+            builder.HasIndex(bc => bc.Code)
+               .IsUnique();
+
             builder.Property(mg => mg.Name)
                    .IsRequired()
                    .HasMaxLength(200);
@@ -31,6 +34,12 @@ namespace App.Repositories.MainGroups
                    .WithOne(sc => sc.MainGroup)
                    .HasForeignKey(sc => sc.MainGroupId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(mg=> mg.User)
+                   .WithMany(m=>m.MainGroups)
+                   .HasForeignKey(mg => mg.UserId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
         }
     }
 }

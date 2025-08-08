@@ -19,6 +19,9 @@ namespace App.Repositories.StockCards
                    .IsRequired()
                    .HasMaxLength(50);
 
+            builder.HasIndex(bc => bc.Code)
+               .IsUnique();
+
             builder.Property(sc => sc.Type)
                    .IsRequired()
                    .HasConversion<string>()
@@ -78,6 +81,12 @@ namespace App.Repositories.StockCards
                    .WithOne(st => st.StockCard)
                    .HasForeignKey(st => st.StockCardId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(sc => sc.User)
+                   .WithMany(s => s.StockCards)
+                   .HasForeignKey(sc => sc.UserId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
         }
     }
 }

@@ -9,5 +9,6 @@ namespace App.Repositories.SubGroups
 {
     public interface ISubGroupRepository: IGenericRepository<SubGroup>
     {
+        Task<List<SubGroup>> GetAllWithDetailsAsync();
     }
 }

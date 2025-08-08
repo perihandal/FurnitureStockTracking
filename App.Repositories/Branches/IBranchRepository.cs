@@ -8,5 +8,7 @@ namespace App.Repositories.Branches
 {
     public interface IBranchRepository : IGenericRepository<Branch>
     {
+        Task<List<Branch>> GetAllWithDetailsAsync();
+   
     }
 }

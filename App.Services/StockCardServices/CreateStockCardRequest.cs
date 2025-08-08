@@ -10,6 +10,7 @@ namespace App.Services.StockCardServices
         string Unit,
         decimal Tax,
         int CompanyId,
+        int UserId,
         int BranchId,
         int MainGroupId,
         int? SubGroupId,

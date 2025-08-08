@@ -2,12 +2,14 @@
 using App.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using App.Services.StockCardServices;
+using App.Services.CategoryServices;
+using App.Services.CompanyServices;
+using App.Services.WareHouseServices;
+using App.Services.BranchServices;
+using App.Services.MainGroupServices;
+using App.Services.SubGroupServices;
+using App.Services.PriceDefinitionServices;
 
 namespace App.Services.ServiceExtensions
 {
@@ -17,12 +19,14 @@ namespace App.Services.ServiceExtensions
         {
 
             services.AddScoped<IStockCardService, StockCardService>();
+            services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<ICompanyService, CompanyService>();
+            services.AddScoped<IWareHouseService, WareHouseService>();
+            services.AddScoped<IBranchService, BranchService>();
+            services.AddScoped<IMainGroupService, MainGroupService>();
+            services.AddScoped<ISubGroupService, SubGroupService>();
+            services.AddScoped<IPriceDefinitionService, PriceDefinitionService>();
 
-            // services.AddScoped<ICategoryService, CategoryService>();
-            // services.AddScoped<IProductionLogService, ProductionLogService>();
-            // services.AddScoped<IRecipeItemService, RecipeItemService>();
-            // services.AddScoped<IStockTransactionService, StockTransactionService>();
-            // services.AddScoped<ISupplierService, SupplierService>();
             return services;
         }
     }

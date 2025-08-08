@@ -1,5 +1,7 @@
-﻿using App.Repositories.Companies;
+﻿using App.Repositories.BarcodeCards;
+using App.Repositories.Companies;
 using App.Repositories.StockCards;
+using App.Repositories.Users;
 using App.Repositories.Warehouses;
 
 namespace App.Repositories.Branches
@@ -16,7 +18,12 @@ namespace App.Repositories.Branches
         public int CompanyId { get; set; }
         public Company Company { get; set; } = default!;
 
+        public int? UserId { get; set; }
+        public User? User { get; set; }
+
+
         public ICollection<StockCard> StockCards { get; set; } = new List<StockCard>();
         public ICollection<Warehouse> Warehouses { get; set; } = new List<Warehouse>();
+        public ICollection<BarcodeCard> BarcodeCards { get; set; } = new List<BarcodeCard>();
     }
 }

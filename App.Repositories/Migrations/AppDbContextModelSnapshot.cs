@@ -30,15 +30,24 @@ namespace App.Repositories.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Barcode")
+                    b.Property<string>("BarcodeCode")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<string>("BarcodeType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                    b.Property<int>("BarcodeType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreateDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<bool>("IsDefault")
                         .ValueGeneratedOnAdd()
@@ -48,9 +57,21 @@ namespace App.Repositories.Migrations
                     b.Property<int>("StockCardId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("BarcodeCode")
+                        .IsUnique();
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("CompanyId");
+
                     b.HasIndex("StockCardId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("BarcodeCards", (string)null);
                 });
@@ -70,8 +91,8 @@ namespace App.Repositories.Migrations
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
@@ -91,9 +112,17 @@ namespace App.Repositories.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("Code")
+                        .IsUnique();
+
                     b.HasIndex("CompanyId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Branches", (string)null);
                 });
@@ -106,10 +135,21 @@ namespace App.Repositories.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreateDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -121,7 +161,19 @@ namespace App.Repositories.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Categories", (string)null);
                 });
@@ -138,6 +190,11 @@ namespace App.Repositories.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -159,7 +216,15 @@ namespace App.Repositories.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Companies", (string)null);
                 });
@@ -187,7 +252,15 @@ namespace App.Repositories.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("MainGroups", (string)null);
                 });
@@ -200,20 +273,20 @@ namespace App.Repositories.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Currency")
-                        .IsRequired()
+                    b.Property<int>("Currency")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)")
-                        .HasDefaultValue("TRY");
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("PriceType")
-                        .IsRequired()
+                    b.Property<int>("PriceType")
                         .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("int");
 
                     b.Property<int>("StockCardId")
                         .HasColumnType("int");
@@ -231,11 +304,62 @@ namespace App.Repositories.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StockCardId");
-
                     b.HasIndex("UserId");
 
+                    b.HasIndex("StockCardId", "PriceType")
+                        .IsUnique();
+
                     b.ToTable("PriceDefinitions", (string)null);
+                });
+
+            modelBuilder.Entity("App.Repositories.PriceHistories.PriceHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ChangeDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<decimal>("NewPrice")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<decimal>("OldPrice")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<int>("PriceDefinitionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PriceType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PriceDefinitionId");
+
+                    b.ToTable("PriceHistories", (string)null);
+                });
+
+            modelBuilder.Entity("App.Repositories.Roles.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("App.Repositories.StockCards.StockCard", b =>
@@ -294,11 +418,17 @@ namespace App.Repositories.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
 
                     b.HasIndex("CompanyId");
 
@@ -306,51 +436,9 @@ namespace App.Repositories.Migrations
 
                     b.HasIndex("SubGroupId");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("StockCards", (string)null);
-                });
-
-            modelBuilder.Entity("App.Repositories.StockTransactions.StockTransaction", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<string>("DocumentNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("StockCardId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("TransactionDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("TransactionType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<int>("WarehouseId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StockCardId");
-
-                    b.HasIndex("WarehouseId");
-
-                    b.ToTable("StockTransactions", (string)null);
                 });
 
             modelBuilder.Entity("App.Repositories.SubGroups.SubGroup", b =>
@@ -379,11 +467,34 @@ namespace App.Repositories.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
 
                     b.HasIndex("MainGroupId");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("SubGroups", (string)null);
+                });
+
+            modelBuilder.Entity("App.Repositories.UserRoles.UserRole", b =>
+                {
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("App.Repositories.Users.User", b =>
@@ -394,28 +505,34 @@ namespace App.Repositories.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
-                    b.Property<string>("Role")
+                    b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("User");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("App.Repositories.Warehouses.Warehouse", b =>
@@ -452,12 +569,20 @@ namespace App.Repositories.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
 
                     b.HasIndex("CompanyId");
 
@@ -466,15 +591,100 @@ namespace App.Repositories.Migrations
                     b.ToTable("Warehouses", (string)null);
                 });
 
+            modelBuilder.Entity("StockTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("DocumentNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<int?>("FromWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("StockCardId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ToWarehouseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WarehouseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentNumber")
+                        .IsUnique();
+
+                    b.HasIndex("FromWarehouseId");
+
+                    b.HasIndex("StockCardId");
+
+                    b.HasIndex("ToWarehouseId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("StockTransactions", (string)null);
+                });
+
             modelBuilder.Entity("App.Repositories.BarcodeCards.BarcodeCard", b =>
                 {
+                    b.HasOne("App.Repositories.Branches.Branch", "Branch")
+                        .WithMany("BarcodeCards")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("App.Repositories.Companies.Company", "Company")
+                        .WithMany("BarcodeCards")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("App.Repositories.StockCards.StockCard", "StockCard")
                         .WithMany("BarcodeCards")
                         .HasForeignKey("StockCardId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("App.Repositories.Users.User", "User")
+                        .WithMany("BarcodeCards")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Company");
+
                     b.Navigation("StockCard");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("App.Repositories.Branches.Branch", b =>
@@ -485,7 +695,60 @@ namespace App.Repositories.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("App.Repositories.Users.User", "User")
+                        .WithMany("Branches")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Company");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("App.Repositories.Categories.Category", b =>
+                {
+                    b.HasOne("App.Repositories.Branches.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("App.Repositories.Companies.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("App.Repositories.Users.User", "User")
+                        .WithMany("Categories")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("App.Repositories.Companies.Company", b =>
+                {
+                    b.HasOne("App.Repositories.Users.User", "User")
+                        .WithMany("Companies")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("App.Repositories.MainGroups.MainGroup", b =>
+                {
+                    b.HasOne("App.Repositories.Users.User", "User")
+                        .WithMany("MainGroups")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("App.Repositories.PriceDefinitions.PriceDefinition", b =>
@@ -496,11 +759,25 @@ namespace App.Repositories.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("App.Repositories.Users.User", null)
-                        .WithMany("StockTransactions")
-                        .HasForeignKey("UserId");
+                    b.HasOne("App.Repositories.Users.User", "User")
+                        .WithMany("PriceDefinitions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("StockCard");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("App.Repositories.PriceHistories.PriceHistory", b =>
+                {
+                    b.HasOne("App.Repositories.PriceDefinitions.PriceDefinition", "PriceDefinition")
+                        .WithMany()
+                        .HasForeignKey("PriceDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PriceDefinition");
                 });
 
             modelBuilder.Entity("App.Repositories.StockCards.StockCard", b =>
@@ -533,6 +810,11 @@ namespace App.Repositories.Migrations
                         .HasForeignKey("SubGroupId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("App.Repositories.Users.User", "User")
+                        .WithMany("StockCards")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Branch");
 
                     b.Navigation("Category");
@@ -542,25 +824,8 @@ namespace App.Repositories.Migrations
                     b.Navigation("MainGroup");
 
                     b.Navigation("SubGroup");
-                });
 
-            modelBuilder.Entity("App.Repositories.StockTransactions.StockTransaction", b =>
-                {
-                    b.HasOne("App.Repositories.StockCards.StockCard", "StockCard")
-                        .WithMany("StockTransactions")
-                        .HasForeignKey("StockCardId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("App.Repositories.Warehouses.Warehouse", "Warehouse")
-                        .WithMany()
-                        .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("StockCard");
-
-                    b.Navigation("Warehouse");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("App.Repositories.SubGroups.SubGroup", b =>
@@ -568,10 +833,36 @@ namespace App.Repositories.Migrations
                     b.HasOne("App.Repositories.MainGroups.MainGroup", "MainGroup")
                         .WithMany("SubGroups")
                         .HasForeignKey("MainGroupId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("App.Repositories.Users.User", "User")
+                        .WithMany("SubGroups")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("MainGroup");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("App.Repositories.UserRoles.UserRole", b =>
+                {
+                    b.HasOne("App.Repositories.Roles.Role", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("App.Repositories.Users.User", "User")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("App.Repositories.Warehouses.Warehouse", b =>
@@ -588,17 +879,62 @@ namespace App.Repositories.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("App.Repositories.Users.User", null)
-                        .WithMany("ProductionLogs")
-                        .HasForeignKey("UserId");
+                    b.HasOne("App.Repositories.Users.User", "User")
+                        .WithMany("Warehouses")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Branch");
 
                     b.Navigation("Company");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("StockTransaction", b =>
+                {
+                    b.HasOne("App.Repositories.Warehouses.Warehouse", "FromWarehouse")
+                        .WithMany()
+                        .HasForeignKey("FromWarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("App.Repositories.StockCards.StockCard", "StockCard")
+                        .WithMany("StockTransactions")
+                        .HasForeignKey("StockCardId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("App.Repositories.Warehouses.Warehouse", "ToWarehouse")
+                        .WithMany()
+                        .HasForeignKey("ToWarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("App.Repositories.Users.User", "User")
+                        .WithMany("StockTransactions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("App.Repositories.Warehouses.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromWarehouse");
+
+                    b.Navigation("StockCard");
+
+                    b.Navigation("ToWarehouse");
+
+                    b.Navigation("User");
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("App.Repositories.Branches.Branch", b =>
                 {
+                    b.Navigation("BarcodeCards");
+
                     b.Navigation("StockCards");
 
                     b.Navigation("Warehouses");
@@ -611,6 +947,8 @@ namespace App.Repositories.Migrations
 
             modelBuilder.Entity("App.Repositories.Companies.Company", b =>
                 {
+                    b.Navigation("BarcodeCards");
+
                     b.Navigation("Branches");
 
                     b.Navigation("StockCards");
@@ -623,6 +961,11 @@ namespace App.Repositories.Migrations
                     b.Navigation("StockCards");
 
                     b.Navigation("SubGroups");
+                });
+
+            modelBuilder.Entity("App.Repositories.Roles.Role", b =>
+                {
+                    b.Navigation("UserRoles");
                 });
 
             modelBuilder.Entity("App.Repositories.StockCards.StockCard", b =>
@@ -641,9 +984,27 @@ namespace App.Repositories.Migrations
 
             modelBuilder.Entity("App.Repositories.Users.User", b =>
                 {
-                    b.Navigation("ProductionLogs");
+                    b.Navigation("BarcodeCards");
+
+                    b.Navigation("Branches");
+
+                    b.Navigation("Categories");
+
+                    b.Navigation("Companies");
+
+                    b.Navigation("MainGroups");
+
+                    b.Navigation("PriceDefinitions");
+
+                    b.Navigation("StockCards");
 
                     b.Navigation("StockTransactions");
+
+                    b.Navigation("SubGroups");
+
+                    b.Navigation("UserRoles");
+
+                    b.Navigation("Warehouses");
                 });
 #pragma warning restore 612, 618
         }

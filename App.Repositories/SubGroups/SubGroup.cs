@@ -1,5 +1,6 @@
 ﻿using App.Repositories.MainGroups;
 using App.Repositories.StockCards;
+using App.Repositories.Users;
 
 namespace App.Repositories.SubGroups
 {
@@ -12,6 +13,9 @@ namespace App.Repositories.SubGroups
 
         public int MainGroupId { get; set; }
         public MainGroup MainGroup { get; set; } = default!;
+
+        public int? UserId { get; set; }
+        public User? User { get; set; }
 
         public ICollection<StockCard> StockCards { get; set; } = new List<StockCard>();
     }

@@ -1,5 +1,4 @@
-﻿using App.Repositories.Warehauses;
-using App.Repositories.Categories;
+﻿using App.Repositories.Categories;
 using App.Repositories.Companies;
 using App.Repositories.StockCards;
 using App.Repositories.StockTransactions;
@@ -12,6 +11,8 @@ using App.Repositories.Warehouses;
 using App.Repositories.PriceDefinitions;
 using App.Repositories.Branches;
 using App.Repositories.SubGroups;
+using App.Repositories.UserRoles;
+using App.Repositories.Roles;
 
 namespace App.Repositories
 {
@@ -31,6 +32,9 @@ namespace App.Repositories
         public DbSet<BarcodeCard> BarcodeCards { get; set; } = default!;
         public DbSet<Warehouse> Warehouses { get; set; } = default!;
         public DbSet<PriceDefinition> PriceDefinitions { get; set; } = default!;
+        public DbSet<User> Users { get; set; } = default!;
+        public DbSet<UserRole> UserRoles { get; set; } = default!;
+        public DbSet<Role> Roles { get; set; } = default!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

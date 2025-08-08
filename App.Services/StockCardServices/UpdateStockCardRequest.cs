@@ -15,6 +15,7 @@ namespace App.Services.StockCardServices
         decimal Tax,
         bool IsActive,
         int CompanyId,
+        int UserId,
         int BranchId,
         int MainGroupId,
         int? SubGroupId,

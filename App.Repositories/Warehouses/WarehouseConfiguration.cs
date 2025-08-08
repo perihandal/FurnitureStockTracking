@@ -1,5 +1,4 @@
-﻿using App.Repositories.Warehauses;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace App.Repositories.Warehouses
@@ -16,12 +15,19 @@ namespace App.Repositories.Warehouses
                    .IsRequired()
                    .HasMaxLength(20);
 
+            builder.HasIndex(bc => bc.Code)
+               .IsUnique();
+
             builder.Property(w => w.Name)
                    .IsRequired()
                    .HasMaxLength(200);
 
             builder.Property(w => w.Address)
                    .HasMaxLength(500);
+            
+            builder.Property(w => w.Phone)
+                   .HasMaxLength(500);
+
 
             builder.Property(w => w.IsActive)
                    .HasDefaultValue(true);
@@ -35,6 +41,12 @@ namespace App.Repositories.Warehouses
                    .WithMany(b => b.Warehouses)
                    .HasForeignKey(w => w.BranchId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(sc => sc.User)
+                   .WithMany(w=> w.Warehouses)
+                   .HasForeignKey(sc => sc.UserId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
         }
     }
 }

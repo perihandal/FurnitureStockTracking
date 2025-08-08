@@ -14,17 +14,17 @@ namespace App.Services.StockCardServices
 {
     public class StockCardService(IStockCardRepository stockcardRepository, IUnitOfWork unitOfWork) : IStockCardService
     {
-        public async Task<ServiceResult<List<StockCardDto>>> GetTopPriceASync(int count)
-        {
-            var stockcards = await stockcardRepository.GetTopPriceProductsAsync(count);
+        //public async Task<ServiceResult<List<StockCardDto>>> GetTopPriceASync(int count)
+        //{
+        //    var stockcards = await stockcardRepository.GetTopPriceProductsAsync(count);
 
-            var productsAsDto = stockcards.Select(p => new StockCardDto(p.Id, p.Name)).ToList();
+        //    var productsAsDto = stockcards.Select(p => new StockCardDto(p.Id, p.Name)).ToList();
 
-            return new ServiceResult<List<StockCardDto>>()
-            {
-                Data = productsAsDto
-            };
-        }
+        //    return new ServiceResult<List<StockCardDto>>()
+        //    {
+        //        Data = productsAsDto
+        //    };
+        //}
         //public async Task<ServiceResult<StockCardDto?>> GetByIdAsync(int id)
         //{
         //    var stockcard = await stockcardRepository.GetByIdAsync(id);
@@ -54,6 +54,7 @@ namespace App.Services.StockCardServices
                 MainGroupId = request.MainGroupId,  
                 BranchId = request.BranchId,
                 CategoryId = request.CategoryId,
+                UserId = request.UserId,
 
                 // default değerler:
                 IsActive = true,
@@ -82,6 +83,7 @@ namespace App.Services.StockCardServices
             stockcard.Unit = request.Unit;
             stockcard.SubGroupId = request.SubGroupId;
             stockcard.CompanyId = request.CompanyId;
+            stockcard.UserId = request.UserId;
             stockcard.MainGroupId = request.MainGroupId;
             stockcard.BranchId = request.BranchId;
             stockcard.CategoryId = request.CategoryId;
@@ -98,23 +100,30 @@ namespace App.Services.StockCardServices
         {
             var stockcards = await stockcardRepository.GetAllWithDetailsAsync();
 
+            if (stockcards == null || !stockcards.Any())
+            {
+                return ServiceResult<List<StockCardDto>>.Fail("No stock cards found", HttpStatusCode.NotFound);
+            }
+
             var stockcardAsDto = stockcards.Select(p => new StockCardDto(
-               p.Id,
-               p.Name
-               //p.Code,
-               //p.Type,
-               //p.Unit,
-               //p.Tax,
-               //p.CreatedDate,
-               //p.Company.Name,
-               //p.Branch.Name,
-               //p.MainGroup.Name,
-               //p.SubGroup?.Name,
-               //p.Category?.Name
+                p.Name,
+                p.Code,
+                p.Type,
+                p.Unit,
+                p.Tax,
+                p.CreatedDate,
+                p.Company.Name,
+                p.User.FullName,
+                p.Branch.Name,
+                p.MainGroup.Name,
+                p.SubGroup?.Name,
+                p.Category?.Name,
+                p.BarcodeCards.Select(b => b.BarcodeCode).ToList()
             )).ToList();
 
             return ServiceResult<List<StockCardDto>>.Success(stockcardAsDto);
         }
+
 
     }
 }

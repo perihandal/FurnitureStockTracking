@@ -1,5 +1,4 @@
-﻿using App.Repositories.Warehauses;
-using App.Repositories.Categories;
+﻿using App.Repositories.Categories;
 using App.Repositories.Companies;
 using App.Repositories.StockTransactions;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +15,11 @@ using App.Repositories.Branches;
 using App.Repositories.PriceDefinitions;
 using App.Repositories.BarcodeCards;
 using App.Repositories.SubGroups;
+using App.Repositories.Roles;
+using App.Repositories.UserRoles;
+using App.Repositories.Users;
+using App.Repositories.Warehouses;
+using App.Repositories.PriceHistories;
 
 namespace App.Repositories.Extensions
 {
@@ -43,9 +47,14 @@ namespace App.Repositories.Extensions
             services.AddScoped<IMainGroupRepository, MainGroupRepository>();
             services.AddScoped<ISubGroupRepository, SubGroupRepository>();
             services.AddScoped<IPriceDefinitionRepository, PriceDefinitionRepository>();
+            services.AddScoped<IPriceHistoryRepository, PriceHistoryRepository>();
             services.AddScoped<IStockTransactionRepository, StockTransactionRepository>();
+            services.AddScoped<IWarehouseRepository, WarehouseRepository>();
             services.AddScoped<IBarcodeCardRepository, BarcodeCardRepository>();
             services.AddScoped<ICompanyRepository, CompanyRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IRoleRepository, RoleRepository>();
+            services.AddScoped<IUserRoleRepository, UserRoleRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped(typeof (IGenericRepository<>), typeof (GenericRepository<>));
             return services;

@@ -8,5 +8,6 @@ namespace App.Repositories.MainGroups
 {
     public interface IMainGroupRepository : IGenericRepository<MainGroup>
     {
+        Task<List<MainGroup>> GetAllWithDetailsAsync();
     }
 }

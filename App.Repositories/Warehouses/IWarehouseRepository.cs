@@ -1,13 +1,17 @@
-﻿using App.Repositories.Warehouses;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace App.Repositories.Warehauses
+namespace App.Repositories.Warehouses
 {
-    public interface IWarehauseRepository : IGenericRepository<Warehouse>
+    public interface IWarehouseRepository : IGenericRepository<Warehouse>
     {
+        Task<List<Warehouse>> GetAllWithDetailsAsync();
+        Task<Warehouse?> GetByCodeAsync(string code);
+        Task<Warehouse?> GetByNameAsync(string name);
+
+
     }
 }

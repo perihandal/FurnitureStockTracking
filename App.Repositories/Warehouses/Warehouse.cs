@@ -1,5 +1,6 @@
 ﻿using App.Repositories.Companies;
 using App.Repositories.Branches;
+using App.Repositories.Users;
 
 namespace App.Repositories.Warehouses
 {
@@ -9,6 +10,7 @@ namespace App.Repositories.Warehouses
         public string Code { get; set; } = default!;
         public string Name { get; set; } = default!;
         public string Address { get; set; } = default!;
+        public string Phone { get; set; } = default!;
         public bool IsActive { get; set; } = true;
 
         public int CompanyId { get; set; }
@@ -16,5 +18,8 @@ namespace App.Repositories.Warehouses
 
         public int BranchId { get; set; }
         public Branch Branch { get; set; } = default!;
+        public int? UserId { get; set; }
+        public User? User { get; set; }
+
     }
 }

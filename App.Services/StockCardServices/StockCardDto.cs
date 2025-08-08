@@ -8,17 +8,18 @@ using System;
 namespace App.Services.StockCardServices
 {
     public record class StockCardDto(
-        int Id,
-        string Name
-        //string Code,
-        //StockCardType Type,
-        //string Unit,
-        //decimal Tax,
-        //DateTime CreatedDate,
-        //string CompanyName,
-        //string BranchName,
-        //string MainGroupName,
-        //string? SubGroupName,
-        //string? CategoryName
+        string Name,
+        string Code,
+        StockCardType Type,
+        string Unit,
+        decimal Tax,
+        DateTime CreatedDate,
+        string CompanyName,
+        string UserName,
+        string BranchName,
+        string MainGroupName,
+        string? SubGroupName,
+        string? CategoryName,
+        List<string> barcodes
     );
 }

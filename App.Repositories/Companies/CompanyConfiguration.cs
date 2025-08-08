@@ -14,6 +14,13 @@ namespace App.Repositories.Companies
             builder.Property(c => c.Name)
                    .IsRequired()
                    .HasMaxLength(200);
+            
+            builder.Property(c => c.Code)
+                   .IsRequired()
+                   .HasMaxLength(200);
+
+            builder.HasIndex(bc => bc.Code)
+               .IsUnique();
 
             builder.Property(c => c.TaxNumber)
                    .IsRequired()
@@ -42,6 +49,18 @@ namespace App.Repositories.Companies
                    .WithOne(w => w.Company)
                    .HasForeignKey(w => w.CompanyId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+
+            builder.HasOne(sc => sc.User)
+                   .WithMany(s => s.Companies)
+                   .HasForeignKey(sc => sc.UserId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasMany(b => b.BarcodeCards)  // Şube birden fazla BarcodeCard'a sahip olabilir
+               .WithOne(bc => bc.Company)  // Her BarcodeCard bir şirkete ait olmalıdır
+               .HasForeignKey(bc => bc.CompanyId)  // BarcodeCard'ın şube ile olan ilişkiyi belirtir
+               .OnDelete(DeleteBehavior.Cascade);  // Şube silindiğinde ilişkili BarcodeCard'lar silinsin
+
         }
     }
 }

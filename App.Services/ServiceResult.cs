@@ -23,16 +23,16 @@ namespace App.Services
         [JsonIgnore] public HttpStatusCode Status { get; set; }
 
         //static factory method
-        public static ServiceResult<T> Success(T data, HttpStatusCode status=HttpStatusCode.OK)
+        public static ServiceResult<T> Success(T data, HttpStatusCode status = HttpStatusCode.OK)
         {
             return new ServiceResult<T>()
             {
                 Data = data,
-                Status= status
+                Status = status
             };
         }
 
-        public static ServiceResult<T> Fail(List <string> errorMessage, HttpStatusCode status = HttpStatusCode.OK)
+        public static ServiceResult<T> Fail(List<string> errorMessage, HttpStatusCode status = HttpStatusCode.OK)
         {
             return new ServiceResult<T>()
             {
@@ -65,10 +65,10 @@ namespace App.Services
         public bool IsFail => !IsSuccess;
 
 
-        [JsonIgnore]  public HttpStatusCode Status { get; set; }
+        [JsonIgnore] public HttpStatusCode Status { get; set; }
 
         //static factory method
-        public static ServiceResult Success( HttpStatusCode status = HttpStatusCode.OK)
+        public static ServiceResult Success(HttpStatusCode status = HttpStatusCode.OK)
         {
             return new ServiceResult()
             {
@@ -85,7 +85,7 @@ namespace App.Services
             };
         }
 
-        public static ServiceResult Fail (string errorMessage, HttpStatusCode status = HttpStatusCode.OK)
+        public static ServiceResult Fail(string errorMessage, HttpStatusCode status = HttpStatusCode.OK)
         {
             return new ServiceResult()
             {
@@ -96,3 +96,4 @@ namespace App.Services
     }
 
 }
+

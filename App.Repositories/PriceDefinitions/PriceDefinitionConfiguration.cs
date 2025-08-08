@@ -20,8 +20,7 @@ namespace App.Repositories.PriceDefinitions
                    .HasColumnType("decimal(18,2)");
 
             builder.Property(pd => pd.Currency)
-                   .HasMaxLength(10)
-                   .HasDefaultValue("TRY");
+                .IsRequired();
 
             builder.Property(pd => pd.ValidFrom)
                    .HasColumnType("datetime")
@@ -30,10 +29,24 @@ namespace App.Repositories.PriceDefinitions
             builder.Property(pd => pd.ValidTo)
                    .HasColumnType("datetime");
 
+            builder.Property(pd => pd.IsActive)
+                .HasDefaultValue(false);  // Varsayılan olarak false
+
+
+
             builder.HasOne(pd => pd.StockCard)
                    .WithMany(sc => sc.PriceDefinitions)
                    .HasForeignKey(pd => pd.StockCardId)
                    .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(sc => sc.User)
+                   .WithMany(p => p.PriceDefinitions)
+                   .HasForeignKey(sc => sc.UserId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(pd => new { pd.StockCardId, pd.PriceType })
+                   .IsUnique(); // Aynı StockCardId ve PriceType ile aynı fiyatın olmasını engeller
         }
     }
-}
+    }
+

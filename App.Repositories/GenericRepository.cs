@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace App.Repositories
 {
-    public class GenericRepository<T> (AppDbContext context) : IGenericRepository<T> where T: class
+    public class GenericRepository<T> (AppDbContext _context) : IGenericRepository<T> where T: class
     {
-        private readonly DbSet<T> _dbSet = context.Set<T>();
+        private readonly DbSet<T> _dbSet = _context.Set<T>();
 
         public async ValueTask<T> AddAsync(T enitiy)
         {
