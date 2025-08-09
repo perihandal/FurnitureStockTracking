@@ -8,5 +8,7 @@ namespace App.Repositories.StockTransactions
 {
    public interface IStockTransactionRepository : IGenericRepository<StockTransaction>
     {
+        Task<List<StockTransaction>> GetAllWithDetailsAsync();
+        Task<StockTransaction?> GetByIdWithDetailsAsync(int id);
     }
 }

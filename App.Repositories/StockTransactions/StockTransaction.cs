@@ -4,9 +4,9 @@ using App.Repositories.Warehouses;
 
 public enum TransactionType
 {
-    Giris,
-    Cikis,
-    Transfer
+    Giris=1,
+    Cikis=2,
+    Transfer=3
 }
 
 public class StockTransaction

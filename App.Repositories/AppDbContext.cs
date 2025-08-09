@@ -13,6 +13,7 @@ using App.Repositories.Branches;
 using App.Repositories.SubGroups;
 using App.Repositories.UserRoles;
 using App.Repositories.Roles;
+using App.Repositories.PriceHistories;
 
 namespace App.Repositories
 {
@@ -29,6 +30,7 @@ namespace App.Repositories
         public DbSet<MainGroup> MainGroups { get; set; } = default!;
         public DbSet<SubGroup> SubGroups { get; set; } = default!;
         public DbSet<StockTransaction> StockTransactions { get; set; } = default!;
+        public DbSet<PriceHistory> PriceHistories { get; set; } = default!;
         public DbSet<BarcodeCard> BarcodeCards { get; set; } = default!;
         public DbSet<Warehouse> Warehouses { get; set; } = default!;
         public DbSet<PriceDefinition> PriceDefinitions { get; set; } = default!;

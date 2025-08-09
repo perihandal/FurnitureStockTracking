@@ -26,6 +26,7 @@ namespace App.Services.ServiceExtensions
             services.AddScoped<IMainGroupService, MainGroupService>();
             services.AddScoped<ISubGroupService, SubGroupService>();
             services.AddScoped<IPriceDefinitionService, PriceDefinitionService>();
+            services.AddScoped<IPriceHistoryService, PriceHistoryService>();
 
             return services;
         }
