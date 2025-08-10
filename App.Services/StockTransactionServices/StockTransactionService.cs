@@ -7,6 +7,8 @@ using App.Repositories;
 using App.Repositories.WarehouseStocks;
 using App.Services;
 using App.Services.StockTransactionServices;
+using System.Numerics;
+using System;
 
 public class StockTransactionService : IStockTransactionService
 {
@@ -117,16 +119,27 @@ public class StockTransactionService : IStockTransactionService
 
         await _stockTransactionRepository.AddAsync(entity);
 
+        // Transfer işleminde WarehouseId null olmalı
+        if (request.Type == TransactionType.Transfer)
+        {
+            entity.WarehouseId = null;
+        }
+        else
+        {
+            entity.WarehouseId = request.WarehouseId;
+        }
+
+
         // 3. Depo stoklarını güncelleme
         switch (entity.Type)
         {
             case TransactionType.Giris:
-                var inStock = await _warehouseStockRepository.GetByWarehouseAndStockCardAsync(entity.WarehouseId, entity.StockCardId);
+                var inStock = await _warehouseStockRepository.GetByWarehouseAndStockCardAsync(entity.WarehouseId.Value, entity.StockCardId);
                 if (inStock == null)
                 {
                     inStock = new WarehouseStock
                     {
-                        WarehouseId = entity.WarehouseId,
+                        WarehouseId = entity.WarehouseId.Value,
                         StockCardId = entity.StockCardId,
                         Quantity = 0
                     };
@@ -137,7 +150,7 @@ public class StockTransactionService : IStockTransactionService
                 break;
 
             case TransactionType.Cikis:
-                var outStock = await _warehouseStockRepository.GetByWarehouseAndStockCardAsync(entity.WarehouseId, entity.StockCardId);
+                var outStock = await _warehouseStockRepository.GetByWarehouseAndStockCardAsync(entity.WarehouseId.Value, entity.StockCardId);
                 if (outStock == null || outStock.Quantity < entity.Quantity)
                     return ServiceResult<CreateStockTransactionResponse>.Fail("Depoda yeterli stok yok.");
                 outStock.Quantity -= entity.Quantity;
