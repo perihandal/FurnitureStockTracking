@@ -21,8 +21,8 @@ public class StockTransaction
     public int StockCardId { get; set; }
     public StockCard StockCard { get; set; } = default!;
 
-    public int WarehouseId { get; set; }
-    public Warehouse Warehouse { get; set; } = default!;
+    public int? WarehouseId { get; set; }
+    public Warehouse? Warehouse { get; set; }
 
     public int? FromWarehouseId { get; set; }
     public Warehouse? FromWarehouse { get; set; }

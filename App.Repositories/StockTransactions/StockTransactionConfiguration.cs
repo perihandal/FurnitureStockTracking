@@ -45,7 +45,8 @@ namespace App.Repositories.StockTransactions
             builder.HasOne(st => st.Warehouse)
                    .WithMany()
                    .HasForeignKey(st => st.WarehouseId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.Restrict)
+                   .IsRequired(false);
 
             builder.HasOne(st => st.FromWarehouse)
                    .WithMany()

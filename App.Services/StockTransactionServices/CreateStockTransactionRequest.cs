@@ -8,7 +8,7 @@
         public string? DocumentNumber { get; set; }
         public string? Description { get; set; }
         public int StockCardId { get; set; }
-        public int WarehouseId { get; set; }
+        public int? WarehouseId { get; set; }
         public int? FromWarehouseId { get; set; }
         public int? ToWarehouseId { get; set; }
         public int? UserId { get; set; }

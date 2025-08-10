@@ -11,7 +11,7 @@ namespace App.Repositories.StockTransactions
     {
         public async Task<List<StockTransaction>> GetAllWithDetailsAsync()
         {
-            return await context.StockTransactions
+            return await context.Set<StockTransaction>()
                 .Include(st => st.StockCard)
                 .Include(st => st.Warehouse)
                 .Include(st => st.FromWarehouse)
@@ -22,7 +22,7 @@ namespace App.Repositories.StockTransactions
 
         public async Task<StockTransaction?> GetByIdWithDetailsAsync(int id)
         {
-            return await context.StockTransactions
+            return await context.Set<StockTransaction>()
                 .Include(st => st.StockCard)
                 .Include(st => st.Warehouse)
                 .Include(st => st.FromWarehouse)

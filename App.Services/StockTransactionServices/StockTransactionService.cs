@@ -1,127 +1,211 @@
-﻿using App.Repositories;
-using App.Repositories.StockTransactions;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using App.Repositories.StockTransactions;
+using App.Repositories;
+using App.Repositories.WarehouseStocks;
+using App.Services;
+using App.Services.StockTransactionServices;
 
-namespace App.Services.StockTransactionServices
+public class StockTransactionService : IStockTransactionService
 {
-    public class StockTransactionService : IStockTransactionService
+    private readonly IStockTransactionRepository _stockTransactionRepository;
+    private readonly IWarehouseStockRepository _warehouseStockRepository;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public StockTransactionService(
+        IStockTransactionRepository stockTransactionRepository,
+        IWarehouseStockRepository warehouseStockRepository,
+        IUnitOfWork unitOfWork)
     {
-        private readonly IStockTransactionRepository _stockTransactionRepository;
-        private readonly IUnitOfWork _unitOfWork;
+        _stockTransactionRepository = stockTransactionRepository;
+        _warehouseStockRepository = warehouseStockRepository;
+        _unitOfWork = unitOfWork;
+    }
 
-        public StockTransactionService(IStockTransactionRepository stockTransactionRepository, IUnitOfWork unitOfWork)
+    public async Task<ServiceResult<List<StockTransactionDto>>> GetAllAsync()
+    {
+        var transactions = await _stockTransactionRepository.GetAllWithDetailsAsync();
+        var dtos = transactions.Select(st => new StockTransactionDto
         {
-            _stockTransactionRepository = stockTransactionRepository;
-            _unitOfWork = unitOfWork;
+            Id = st.Id,
+            Type = st.Type,
+            Quantity = st.Quantity,
+            TransactionDate = st.TransactionDate,
+            DocumentNumber = st.DocumentNumber,
+            Description = st.Description,
+            StockCardId = st.StockCardId,
+            StockCardName = st.StockCard.Name,
+            WarehouseId = st.WarehouseId,
+            WarehouseName = st.Warehouse.Name,
+            FromWarehouseId = st.FromWarehouseId,
+            FromWarehouseName = st.FromWarehouse?.Name,
+            ToWarehouseId = st.ToWarehouseId,
+            ToWarehouseName = st.ToWarehouse?.Name,
+            UserId = st.UserId,
+            UserFullName = st.User?.FullName
+        }).ToList();
+
+        return ServiceResult<List<StockTransactionDto>>.Success(dtos);
+    }
+
+    public async Task<ServiceResult<StockTransactionDto?>> GetByIdAsync(int id)
+    {
+        var st = await _stockTransactionRepository.GetByIdWithDetailsAsync(id);
+        if (st == null)
+            return ServiceResult<StockTransactionDto?>.Fail("StockTransaction not found", HttpStatusCode.NotFound);
+
+        var dto = new StockTransactionDto
+        {
+            Id = st.Id,
+            Type = st.Type,
+            Quantity = st.Quantity,
+            TransactionDate = st.TransactionDate,
+            DocumentNumber = st.DocumentNumber,
+            Description = st.Description,
+            StockCardId = st.StockCardId,
+            StockCardName = st.StockCard.Name,
+            WarehouseId = st.WarehouseId,
+            WarehouseName = st.Warehouse.Name,
+            FromWarehouseId = st.FromWarehouseId,
+            FromWarehouseName = st.FromWarehouse?.Name,
+            ToWarehouseId = st.ToWarehouseId,
+            ToWarehouseName = st.ToWarehouse?.Name,
+            UserId = st.UserId,
+            UserFullName = st.User?.FullName
+        };
+
+        return ServiceResult<StockTransactionDto?>.Success(dto);
+    }
+
+    public async Task<ServiceResult<CreateStockTransactionResponse>> CreateAsync(CreateStockTransactionRequest request)
+    {
+        // 1. İşlem tipine göre depo ID doğrulama
+        switch (request.Type)
+        {
+            case TransactionType.Giris:
+                if (request.WarehouseId <= 0 || request.FromWarehouseId.HasValue || request.ToWarehouseId.HasValue)
+                    return ServiceResult<CreateStockTransactionResponse>.Fail("Giriş işlemi için yalnızca WarehouseId dolu olmalı.");
+                break;
+
+            case TransactionType.Cikis:
+                if (request.WarehouseId <= 0 || request.FromWarehouseId.HasValue || request.ToWarehouseId.HasValue)
+                    return ServiceResult<CreateStockTransactionResponse>.Fail("Çıkış işlemi için yalnızca WarehouseId dolu olmalı.");
+                break;
+
+            case TransactionType.Transfer:
+                if (!request.FromWarehouseId.HasValue || !request.ToWarehouseId.HasValue || request.WarehouseId != 0)
+                    return ServiceResult<CreateStockTransactionResponse>.Fail("Transfer için FromWarehouseId ve ToWarehouseId zorunlu, WarehouseId boş olmalı.");
+                break;
         }
 
-        public async Task<ServiceResult<List<StockTransactionDto>>> GetAllListAsync()
+        // 2. Transaction entity oluşturma
+        var entity = new StockTransaction
         {
-            var transactions = await _stockTransactionRepository.GetAllWithDetailsAsync();
+            Type = request.Type,
+            Quantity = request.Quantity,
+            TransactionDate = request.TransactionDate,
+            DocumentNumber = request.DocumentNumber,
+            Description = request.Description,
+            StockCardId = request.StockCardId,
+            WarehouseId = request?.WarehouseId,
+            FromWarehouseId = request.FromWarehouseId,
+            ToWarehouseId = request.ToWarehouseId,
+            UserId = request.UserId
+        };
 
-            var transactionDtos = transactions.Select(tr => new StockTransactionDto
-            {
-                Id = tr.Id,
-                Type = tr.Type,
-                Quantity = tr.Quantity,
-                TransactionDate = tr.TransactionDate,
-                DocumentNumber = tr.DocumentNumber,
-                Description = tr.Description,
-                StockCardName = tr.StockCard.Name,
-                WarehouseName = tr.Warehouse.Name,
-                FromWarehouseName = tr.FromWarehouse?.Name,
-                ToWarehouseName = tr.ToWarehouse?.Name,
-                UserFullName = tr.User?.FullName
-            }).ToList();
+        await _stockTransactionRepository.AddAsync(entity);
 
-            return ServiceResult<List<StockTransactionDto>>.Success(transactionDtos);
+        // 3. Depo stoklarını güncelleme
+        switch (entity.Type)
+        {
+            case TransactionType.Giris:
+                var inStock = await _warehouseStockRepository.GetByWarehouseAndStockCardAsync(entity.WarehouseId, entity.StockCardId);
+                if (inStock == null)
+                {
+                    inStock = new WarehouseStock
+                    {
+                        WarehouseId = entity.WarehouseId,
+                        StockCardId = entity.StockCardId,
+                        Quantity = 0
+                    };
+                    await _warehouseStockRepository.AddAsync(inStock);
+                }
+                inStock.Quantity += entity.Quantity;
+                _warehouseStockRepository.Update(inStock);
+                break;
+
+            case TransactionType.Cikis:
+                var outStock = await _warehouseStockRepository.GetByWarehouseAndStockCardAsync(entity.WarehouseId, entity.StockCardId);
+                if (outStock == null || outStock.Quantity < entity.Quantity)
+                    return ServiceResult<CreateStockTransactionResponse>.Fail("Depoda yeterli stok yok.");
+                outStock.Quantity -= entity.Quantity;
+                _warehouseStockRepository.Update(outStock);
+                break;
+
+            case TransactionType.Transfer:
+                var fromStock = await _warehouseStockRepository.GetByWarehouseAndStockCardAsync(entity.FromWarehouseId.Value, entity.StockCardId);
+                if (fromStock == null || fromStock.Quantity < entity.Quantity)
+                    return ServiceResult<CreateStockTransactionResponse>.Fail("Çıkış deposunda yeterli stok yok.");
+                fromStock.Quantity -= entity.Quantity;
+                _warehouseStockRepository.Update(fromStock);
+
+                var toStock = await _warehouseStockRepository.GetByWarehouseAndStockCardAsync(entity.ToWarehouseId.Value, entity.StockCardId);
+                if (toStock == null)
+                {
+                    toStock = new WarehouseStock
+                    {
+                        WarehouseId = entity.ToWarehouseId.Value,
+                        StockCardId = entity.StockCardId,
+                        Quantity = 0
+                    };
+                    await _warehouseStockRepository.AddAsync(toStock);
+                }
+                toStock.Quantity += entity.Quantity;
+                _warehouseStockRepository.Update(toStock);
+                break;
         }
 
-        public async Task<ServiceResult<StockTransactionDto?>> GetByIdAsync(int id)
-        {
-            var transaction = await _stockTransactionRepository.GetByIdWithDetailsAsync(id);
+        // 4. Kaydet
+        await _unitOfWork.SaveChangesAsync();
 
-            if (transaction == null)
-                return ServiceResult<StockTransactionDto?>.Fail("Stock transaction not found", HttpStatusCode.NotFound);
+        return ServiceResult<CreateStockTransactionResponse>.Success(new CreateStockTransactionResponse(entity.Id));
+    }
 
-            var dto = new StockTransactionDto
-            {
-                Id = transaction.Id,
-                Type = transaction.Type,
-                Quantity = transaction.Quantity,
-                TransactionDate = transaction.TransactionDate,
-                DocumentNumber = transaction.DocumentNumber,
-                Description = transaction.Description,
-                StockCardName = transaction.StockCard.Name,
-                WarehouseName = transaction.Warehouse.Name,
-                FromWarehouseName = transaction.FromWarehouse?.Name,
-                ToWarehouseName = transaction.ToWarehouse?.Name,
-                UserFullName = transaction.User?.FullName
-            };
 
-            return ServiceResult<StockTransactionDto?>.Success(dto);
-        }
+    public async Task<ServiceResult> UpdateAsync(int id, UpdateStockTransactionRequest request)
+    {
+        var entity = await _stockTransactionRepository.GetByIdAsync(id);
+        if (entity == null)
+            return ServiceResult.Fail("StockTransaction not found", HttpStatusCode.NotFound);
 
-        public async Task<ServiceResult<CreateStockTransactionResponse>> CreateAsync(CreateStockTransactionRequest request)
-        {
-            var transaction = new StockTransaction
-            {
-                Type = request.Type,
-                Quantity = request.Quantity,
-                TransactionDate = request.TransactionDate,
-                DocumentNumber = request.DocumentNumber,
-                Description = request.Description,
-                StockCardId = request.StockCardId,
-                WarehouseId = request.WarehouseId,
-                FromWarehouseId = request.FromWarehouseId,
-                ToWarehouseId = request.ToWarehouseId,
-                UserId = request.UserId
-            };
+        entity.Type = request.Type;
+        entity.Quantity = request.Quantity;
+        entity.TransactionDate = request.TransactionDate;
+        entity.DocumentNumber = request.DocumentNumber;
+        entity.Description = request.Description;
+        entity.StockCardId = request.StockCardId;
+        entity.WarehouseId = request.WarehouseId;
+        entity.FromWarehouseId = request.FromWarehouseId;
+        entity.ToWarehouseId = request.ToWarehouseId;
+        entity.UserId = request.UserId;
 
-            await _stockTransactionRepository.AddAsync(transaction);
-            await _unitOfWork.SaveChangesAsync();
+        _stockTransactionRepository.Update(entity);
+        await _unitOfWork.SaveChangesAsync();
 
-            return ServiceResult<CreateStockTransactionResponse>.Success(new CreateStockTransactionResponse(transaction.Id));
-        }
+        return ServiceResult.Success(HttpStatusCode.NoContent);
+    }
 
-        public async Task<ServiceResult> UpdateAsync(int id, UpdateStockTransactionRequest request)
-        {
-            var transaction = await _stockTransactionRepository.GetByIdAsync(id);
+    public async Task<ServiceResult> DeleteAsync(int id)
+    {
+        var entity = await _stockTransactionRepository.GetByIdAsync(id);
+        if (entity == null)
+            return ServiceResult.Fail("StockTransaction not found", HttpStatusCode.NotFound);
 
-            if (transaction == null)
-                return ServiceResult.Fail("Stock transaction not found", HttpStatusCode.NotFound);
+        _stockTransactionRepository.Delete(entity);
+        await _unitOfWork.SaveChangesAsync();
 
-            transaction.Type = request.Type;
-            transaction.Quantity = request.Quantity;
-            transaction.TransactionDate = request.TransactionDate;
-            transaction.DocumentNumber = request.DocumentNumber;
-            transaction.Description = request.Description;
-            transaction.StockCardId = request.StockCardId;
-            transaction.WarehouseId = request.WarehouseId;
-            transaction.FromWarehouseId = request.FromWarehouseId;
-            transaction.ToWarehouseId = request.ToWarehouseId;
-            transaction.UserId = request.UserId;
-
-            _stockTransactionRepository.Update(transaction);
-            await _unitOfWork.SaveChangesAsync();
-
-            return ServiceResult.Success(HttpStatusCode.NoContent);
-        }
-
-        public async Task<ServiceResult> DeleteAsync(int id)
-        {
-            var transaction = await _stockTransactionRepository.GetByIdAsync(id);
-
-            if (transaction == null)
-                return ServiceResult.Fail("Stock transaction not found", HttpStatusCode.NotFound);
-
-            _stockTransactionRepository.Delete(transaction);
-            await _unitOfWork.SaveChangesAsync();
-
-            return ServiceResult.Success(HttpStatusCode.NoContent);
-        }
+        return ServiceResult.Success(HttpStatusCode.NoContent);
     }
 }

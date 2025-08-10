@@ -8,6 +8,7 @@ using App.Repositories.StockTransactions;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using App.Repositories.Branches;
 using App.Repositories.Users;
+using App.Repositories.WarehouseStocks;
 
 namespace App.Repositories.StockCards
 {
@@ -51,5 +52,6 @@ namespace App.Repositories.StockCards
         public ICollection<BarcodeCard> BarcodeCards { get; set; } = new List<BarcodeCard>();
         public ICollection<PriceDefinition> PriceDefinitions { get; set; } = new List<PriceDefinition>();
         public ICollection<StockTransaction> StockTransactions { get; set; } = new List<StockTransaction>();
+        public ICollection<WarehouseStock> WarehouseStocks { get; set; } = new List<WarehouseStock>();
     }
 }

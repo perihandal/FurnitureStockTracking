@@ -1,6 +1,7 @@
 ﻿using App.Repositories.Companies;
 using App.Repositories.Branches;
 using App.Repositories.Users;
+using App.Repositories.WarehouseStocks;
 
 namespace App.Repositories.Warehouses
 {
@@ -20,6 +21,8 @@ namespace App.Repositories.Warehouses
         public Branch Branch { get; set; } = default!;
         public int? UserId { get; set; }
         public User? User { get; set; }
+
+        public ICollection<WarehouseStock> WarehouseStocks { get; set; } = new List<WarehouseStock>();
 
     }
 }

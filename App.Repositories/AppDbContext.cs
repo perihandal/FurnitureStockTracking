@@ -14,6 +14,7 @@ using App.Repositories.SubGroups;
 using App.Repositories.UserRoles;
 using App.Repositories.Roles;
 using App.Repositories.PriceHistories;
+using App.Repositories.WarehouseStocks;
 
 namespace App.Repositories
 {
@@ -33,6 +34,7 @@ namespace App.Repositories
         public DbSet<PriceHistory> PriceHistories { get; set; } = default!;
         public DbSet<BarcodeCard> BarcodeCards { get; set; } = default!;
         public DbSet<Warehouse> Warehouses { get; set; } = default!;
+        public DbSet<WarehouseStock> WarehouseStocks { get; set; } = default!;
         public DbSet<PriceDefinition> PriceDefinitions { get; set; } = default!;
         public DbSet<User> Users { get; set; } = default!;
         public DbSet<UserRole> UserRoles { get; set; } = default!;

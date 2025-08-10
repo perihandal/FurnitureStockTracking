@@ -15,6 +15,8 @@ namespace App.Repositories
         ValueTask <T> AddAsync(T enitiy);
         void Update(T enitiy);
         void Delete(T entity);
+        Task<List<T>> GetAllAsync();
+
 
 
     }

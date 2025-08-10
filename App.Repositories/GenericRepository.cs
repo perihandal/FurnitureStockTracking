@@ -39,6 +39,11 @@ namespace App.Repositories
         {
             return _dbSet.Where(predicate).AsNoTracking();
         }
+        public async Task<List<T>> GetAllAsync()
+        {
+            return await _dbSet.AsNoTracking().ToListAsync();
+        }
+
 
     }
 }

@@ -87,6 +87,12 @@ namespace App.Repositories.StockCards
                    .HasForeignKey(sc => sc.UserId)
                    .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasMany(sc => sc.WarehouseStocks)
+                   .WithOne(ws => ws.StockCard)
+                   .HasForeignKey(ws => ws.StockCardId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+
         }
     }
 }

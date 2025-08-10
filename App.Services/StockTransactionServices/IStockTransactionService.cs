@@ -2,10 +2,11 @@
 {
     public interface IStockTransactionService
     {
-        Task<ServiceResult> UpdateAsync(int id, UpdateStockTransactionRequest request);
-        Task<ServiceResult<CreateStockTransactionResponse>> CreateAsync(CreateStockTransactionRequest request);
+        Task<ServiceResult<List<StockTransactionDto>>> GetAllAsync();
         Task<ServiceResult<StockTransactionDto?>> GetByIdAsync(int id);
-        Task<ServiceResult<List<StockTransactionDto>>> GetAllListAsync();
+        Task<ServiceResult<CreateStockTransactionResponse>> CreateAsync(CreateStockTransactionRequest request);
+        Task<ServiceResult> UpdateAsync(int id, UpdateStockTransactionRequest request);
+        Task<ServiceResult> DeleteAsync(int id);
 
     }
 }

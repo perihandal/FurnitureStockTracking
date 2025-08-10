@@ -49,6 +49,7 @@ namespace App.Repositories.Extensions
             services.AddScoped<IPriceDefinitionRepository, PriceDefinitionRepository>();
             services.AddScoped<IPriceHistoryRepository, PriceHistoryRepository>();
             services.AddScoped<IStockTransactionRepository, StockTransactionRepository>();
+            services.AddScoped<IWarehouseStockRepository, WarehouseStockRepository>();
             services.AddScoped<IWarehouseRepository, WarehouseRepository>();
             services.AddScoped<IBarcodeCardRepository, BarcodeCardRepository>();
             services.AddScoped<ICompanyRepository, CompanyRepository>();

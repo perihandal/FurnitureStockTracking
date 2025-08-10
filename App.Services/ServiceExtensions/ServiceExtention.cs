@@ -10,6 +10,8 @@ using App.Services.BranchServices;
 using App.Services.MainGroupServices;
 using App.Services.SubGroupServices;
 using App.Services.PriceDefinitionServices;
+using App.Services.StockTransactionServices;
+using App.Services.WareHouseStockServices;
 
 namespace App.Services.ServiceExtensions
 {
@@ -27,6 +29,8 @@ namespace App.Services.ServiceExtensions
             services.AddScoped<ISubGroupService, SubGroupService>();
             services.AddScoped<IPriceDefinitionService, PriceDefinitionService>();
             services.AddScoped<IPriceHistoryService, PriceHistoryService>();
+            services.AddScoped<IStockTransactionService, StockTransactionService>();
+            services.AddScoped<IWarehouseStockService, WarehouseStockService>();
 
             return services;
         }
