@@ -13,5 +13,7 @@ namespace App.Services.StockCardServices
         //Task<ServiceResult<StockCardDto?>> GetByIdAsync(int id);
         Task<ServiceResult<CreateStockCardResponse>> CreateAsync(CreateStockCardRequest request);
         Task<ServiceResult> UpdateAsync(int id, UpdateStockCardRequest request);
+        Task<ServiceResult<List<StockCardDto>>> GetPagedAllListAsync(int pageNumber, int pageSize);
+
     }
 }

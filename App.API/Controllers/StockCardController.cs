@@ -18,6 +18,10 @@ namespace App.API.Controllers
         [HttpPut("{id}")]//---> güncelleme yaparken
         public async Task<IActionResult> Update(int id, UpdateStockCardRequest request) => CreateActionResult(await stockcardService.UpdateAsync(id, request));
 
+        [HttpGet("{pageNumber}/{pageSize}")]
+        public async Task<IActionResult> GetPagedAll (int pageNumber, int pageSize) =>
+        CreateActionResult(await stockcardService.GetPagedAllListAsync(pageNumber, pageSize));
+
 
     }
 }

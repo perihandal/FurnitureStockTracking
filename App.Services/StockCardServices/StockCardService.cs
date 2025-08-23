@@ -124,6 +124,35 @@ namespace App.Services.StockCardServices
             return ServiceResult<List<StockCardDto>>.Success(stockcardAsDto);
         }
 
+        public async Task<ServiceResult<List<StockCardDto>>> GetPagedAllListAsync(int pageNumber, int pageSize)
+        {
+            var stockCardsQuery = stockcardRepository.GetAll();
+
+            var stockCards = await stockCardsQuery
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var stockCardAsDto = stockCards.Select(p => new StockCardDto(
+                p.Name,
+                p.Code,
+                p.Type,
+                p.Unit,
+                p.Tax,
+                p.CreatedDate,
+                p.Company.Name,
+                p.User.FullName,
+                p.Branch.Name,
+                p.MainGroup.Name,
+                p.SubGroup?.Name,
+                p.Category?.Name,
+                p.BarcodeCards.Select(b => b.BarcodeCode).ToList()
+            )).ToList();
+
+            return ServiceResult<List<StockCardDto>>.Success(stockCardAsDto);
+        }
+
+
 
     }
 }

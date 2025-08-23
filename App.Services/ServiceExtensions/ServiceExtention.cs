@@ -12,6 +12,7 @@ using App.Services.SubGroupServices;
 using App.Services.PriceDefinitionServices;
 using App.Services.StockTransactionServices;
 using App.Services.WareHouseStockServices;
+using App.Services.BarcodeCardServices;
 
 namespace App.Services.ServiceExtensions
 {
@@ -31,6 +32,7 @@ namespace App.Services.ServiceExtensions
             services.AddScoped<IPriceHistoryService, PriceHistoryService>();
             services.AddScoped<IStockTransactionService, StockTransactionService>();
             services.AddScoped<IWarehouseStockService, WarehouseStockService>();
+          //  services.AddScoped<IBarcodeCardService, BarcodeCardService>();
 
             return services;
         }
