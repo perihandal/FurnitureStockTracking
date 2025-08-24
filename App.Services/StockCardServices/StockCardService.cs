@@ -1,6 +1,8 @@
 ﻿using App.Repositories;
 using App.Repositories.Categories;
 using App.Repositories.StockCards;
+using App.Repositories.BarcodeCards;
+using App.Services.BarcodeCardGeneratorService;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -12,7 +14,11 @@ using System.Xml.Linq;
 
 namespace App.Services.StockCardServices
 {
-    public class StockCardService(IStockCardRepository stockcardRepository, IUnitOfWork unitOfWork) : IStockCardService
+    public class StockCardService(
+        IStockCardRepository stockcardRepository,
+        IBarcodeCardRepository barcodeCardRepository,
+        IBarcodeGeneratorService barcodeGeneratorService,
+        IUnitOfWork unitOfWork) : IStockCardService
     {
         //public async Task<ServiceResult<List<StockCardDto>>> GetTopPriceASync(int count)
         //{
@@ -42,6 +48,12 @@ namespace App.Services.StockCardServices
 
         public async Task<ServiceResult<CreateStockCardResponse>> CreateAsync(CreateStockCardRequest request)
         {
+            var anyStockCard = await stockcardRepository.Where(x => x.Name = request.Name).AnyAsync();
+            if (anyStockCard)
+            {
+                return ServiceResult<CreateStockCardResponse>.Fail("Ürün İsmi bulunamamktadır.", HttpStatusCode.BadRequest);
+            }
+
             var stockcard = new StockCard()
             {
                 Name = request.Name,
@@ -51,7 +63,7 @@ namespace App.Services.StockCardServices
                 Unit = request.Unit,
                 SubGroupId = request.SubGroupId,
                 CompanyId = request.CompanyId,
-                MainGroupId = request.MainGroupId,  
+                MainGroupId = request.MainGroupId,
                 BranchId = request.BranchId,
                 CategoryId = request.CategoryId,
                 UserId = request.UserId,
@@ -62,10 +74,47 @@ namespace App.Services.StockCardServices
             };
 
             await stockcardRepository.AddAsync(stockcard);
-
             await unitOfWork.SaveChangesAsync();
 
-            return ServiceResult<CreateStockCardResponse>.Success(new CreateStockCardResponse(stockcard.Id));
+            string? defaultBarcodeCode = null;
+
+            // Eğer varsayılan barkod oluşturulması isteniyorsa
+            if (request.CreateDefaultBarcode)
+            {
+                try
+                {
+                    // Benzersiz barkod üret
+                    defaultBarcodeCode = barcodeGeneratorService.GenerateUniqueBarcode(
+                        request.DefaultBarcodeType,
+                        stockcard.Id,
+                        request.CompanyId,
+                        code => barcodeCardRepository.ExistsByBarcodeCodeAsync(code).Result
+                    );
+
+                    var barcodeCard = new BarcodeCard
+                    {
+                        BarcodeCode = defaultBarcodeCode,
+                        BarcodeType = request.DefaultBarcodeType,
+                        IsDefault = true,
+                        StockCardId = stockcard.Id,
+                        UserId = request.UserId,
+                        BranchId = request.BranchId,
+                        CompanyId = request.CompanyId,
+                        CreateDate = DateTime.UtcNow
+                    };
+
+                    await barcodeCardRepository.AddAsync(barcodeCard);
+                    await unitOfWork.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    // Barkod oluşturulamazsa warning olarak devam et, stock card'ı geri alma
+                    // Log the error if logging is available
+                    defaultBarcodeCode = null;
+                }
+            }
+
+            return ServiceResult<CreateStockCardResponse>.Success(new CreateStockCardResponse(stockcard.Id, defaultBarcodeCode));
         }
 
         public async Task<ServiceResult> UpdateAsync(int id, UpdateStockCardRequest request)
@@ -74,8 +123,9 @@ namespace App.Services.StockCardServices
 
             if (stockcard == null)
             {
-                return ServiceResult.Fail("Product not found", HttpStatusCode.NotFound);
+                return ServiceResult.Fail("StockCard not found", HttpStatusCode.NotFound);
             }
+
             stockcard.Name = request.Name;
             stockcard.Code = request.Code;
             stockcard.Tax = request.Tax;
@@ -83,45 +133,38 @@ namespace App.Services.StockCardServices
             stockcard.Unit = request.Unit;
             stockcard.SubGroupId = request.SubGroupId;
             stockcard.CompanyId = request.CompanyId;
-            stockcard.UserId = request.UserId;
             stockcard.MainGroupId = request.MainGroupId;
             stockcard.BranchId = request.BranchId;
             stockcard.CategoryId = request.CategoryId;
+            stockcard.UserId = request.UserId;
             stockcard.IsActive = request.IsActive;
-            stockcard.CreatedDate = DateTime.UtcNow;
 
             stockcardRepository.Update(stockcard);
             await unitOfWork.SaveChangesAsync();
+
             return ServiceResult.Success(HttpStatusCode.NoContent);
-
-
         }
+
         public async Task<ServiceResult<List<StockCardDto>>> GetAllList()
         {
             var stockcards = await stockcardRepository.GetAllWithDetailsAsync();
 
-            if (stockcards == null || !stockcards.Any())
-            {
-                return ServiceResult<List<StockCardDto>>.Fail("No stock cards found", HttpStatusCode.NotFound);
-            }
-
-            var stockcardAsDto = stockcards.Select(p => new StockCardDto(
-                p.Name,
-                p.Code,
-                p.Type,
-                p.Unit,
-                p.Tax,
-                p.CreatedDate,
-                p.Company.Name,
-                p.User.FullName,
-                p.Branch.Name,
-                p.MainGroup.Name,
-                p.SubGroup?.Name,
-                p.Category?.Name,
-                p.BarcodeCards.Select(b => b.BarcodeCode).ToList()
+            var stockcardsAsDto = stockcards.Select(sc => new StockCardDto(
+                sc.Name,
+                sc.Code,
+                sc.Type,
+                sc.Unit,
+                sc.Tax,
+                sc.CreatedDate,
+                sc.Company?.Name ?? "Unknown Company",
+                sc.Branch?.Name ?? "Unknown Branch",
+                sc.MainGroup?.Name ?? "Unknown MainGroup",
+                sc.SubGroup?.Name,
+                sc.Category?.Name,
+                sc.BarcodeCards?.Select(bc => bc.BarcodeCode).ToList() ?? new List<string>()
             )).ToList();
 
-            return ServiceResult<List<StockCardDto>>.Success(stockcardAsDto);
+            return ServiceResult<List<StockCardDto>>.Success(stockcardsAsDto);
         }
 
         public async Task<ServiceResult<List<StockCardDto>>> GetPagedAllListAsync(int pageNumber, int pageSize)
@@ -141,7 +184,6 @@ namespace App.Services.StockCardServices
                 p.Tax,
                 p.CreatedDate,
                 p.Company.Name,
-                p.User.FullName,
                 p.Branch.Name,
                 p.MainGroup.Name,
                 p.SubGroup?.Name,
@@ -151,8 +193,5 @@ namespace App.Services.StockCardServices
 
             return ServiceResult<List<StockCardDto>>.Success(stockCardAsDto);
         }
-
-
-
     }
 }

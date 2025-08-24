@@ -13,6 +13,11 @@ using App.Services.PriceDefinitionServices;
 using App.Services.StockTransactionServices;
 using App.Services.WareHouseStockServices;
 using App.Services.BarcodeCardServices;
+using App.Services.BarcodeCardGeneratorService;
+using App.Services.BarcodeCardValidationService;
+using FluentValidation.AspNetCore;
+using FluentValidation;
+using System.Reflection;
 
 namespace App.Services.ServiceExtensions
 {
@@ -32,7 +37,12 @@ namespace App.Services.ServiceExtensions
             services.AddScoped<IPriceHistoryService, PriceHistoryService>();
             services.AddScoped<IStockTransactionService, StockTransactionService>();
             services.AddScoped<IWarehouseStockService, WarehouseStockService>();
-          //  services.AddScoped<IBarcodeCardService, BarcodeCardService>();
+            services.AddScoped<IBarcodeCardService, BarcodeCardService>();
+            services.AddScoped<IBarcodeGeneratorService, BarcodeGeneratorService>();
+            services.AddScoped<IBarcodeValidationService, BarcodeValidationService>();
+
+            services.AddFluentValidationAutoValidation();
+            services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
             return services;
         }

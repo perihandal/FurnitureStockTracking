@@ -15,7 +15,6 @@ namespace App.Services.StockCardServices
         decimal Tax,
         DateTime CreatedDate,
         string CompanyName,
-        string UserName,
         string BranchName,
         string MainGroupName,
         string? SubGroupName,

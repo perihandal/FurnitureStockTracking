@@ -8,6 +8,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Text;
 using App.Services.BarcodeCardGeneratorService;
+using App.Services.BarcodeCardValidationService;
 
 namespace App.Services.BarcodeCardServices
 {
@@ -16,17 +17,20 @@ namespace App.Services.BarcodeCardServices
         private readonly IBarcodeCardRepository barcodeCardRepository;
         private readonly IStockCardRepository stockCardRepository;
         private readonly IBarcodeGeneratorService barcodeGeneratorService;
+        private readonly IBarcodeValidationService barcodeValidationService;
         private readonly IUnitOfWork unitOfWork;
 
         public BarcodeCardService(
             IBarcodeCardRepository barcodeCardRepository,
             IStockCardRepository stockCardRepository,
             IBarcodeGeneratorService barcodeGeneratorService,
+            IBarcodeValidationService barcodeValidationService,
             IUnitOfWork unitOfWork)
         {
             this.barcodeCardRepository = barcodeCardRepository;
             this.stockCardRepository = stockCardRepository;
             this.barcodeGeneratorService = barcodeGeneratorService;
+            this.barcodeValidationService = barcodeValidationService;
             this.unitOfWork = unitOfWork;
         }
 
@@ -200,7 +204,7 @@ namespace App.Services.BarcodeCardServices
 
         public async Task<ServiceResult> ValidateBarcodeAsync(string barcodeCode, BarcodeType barcodeType)
         {
-            var isValid = barcodeGeneratorService.ValidateBarcode(barcodeCode, barcodeType);
+            var isValid = barcodeValidationService.ValidateBarcode(barcodeCode, barcodeType);
 
             if (!isValid)
             {

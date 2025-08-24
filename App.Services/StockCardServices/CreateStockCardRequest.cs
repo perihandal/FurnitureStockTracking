@@ -1,4 +1,5 @@
 ﻿using App.Repositories.StockCards;
+using App.Repositories.BarcodeCards;
 using System;
 
 namespace App.Services.StockCardServices
@@ -14,6 +15,8 @@ namespace App.Services.StockCardServices
         int BranchId,
         int MainGroupId,
         int? SubGroupId,
-        int? CategoryId
+        int? CategoryId,
+        bool CreateDefaultBarcode = true,
+        BarcodeType DefaultBarcodeType = BarcodeType.EAN13
     );
 }

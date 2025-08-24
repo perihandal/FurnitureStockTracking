@@ -1,50 +1,33 @@
-﻿//using App.Repositories.BarcodeCards;
-//using App.Services.BarcodeCardServices;
-//using Microsoft.AspNetCore.Mvc;
+﻿using App.Repositories.BarcodeCards;
+using App.Services.BarcodeCardServices;
+using Microsoft.AspNetCore.Mvc;
 
-//namespace App.API.Controllers
-//{
-//    [ApiController]
-//    [Route("api/[controller]")]
-//    public class BarcodeCardController : CustomBaseController
-//    {
-//        private readonly IBarcodeCardService _barcodeCardService;
+namespace App.API.Controllers
+{
+    public class BarcodeCardController(IBarcodeCardService barcodeCardService) : CustomBaseController
+    {
+        [HttpGet] //---> istek yaparken
+        public async Task<IActionResult> GetAll() => CreateActionResult(await barcodeCardService.GetAllListAsync());
 
-//        public BarcodeCardController(IBarcodeCardService barcodeCardService)
-//        {
-//            _barcodeCardService = barcodeCardService;
-//        }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id) => CreateActionResult(await barcodeCardService.GetByIdAsync(id));
 
-//        [HttpGet]
-//        public async Task<IActionResult> GetAll()
-//            => CreateActionResult(await _barcodeCardService.GetAllListAsync());
+        [HttpGet("by-stockcard/{stockCardId}")]
+        public async Task<IActionResult> GetByStockCardId(int stockCardId) => CreateActionResult(await barcodeCardService.GetByStockCardIdAsync(stockCardId));
 
-//        [HttpGet("{id}")]
-//        public async Task<IActionResult> GetById(int id)
-//            => CreateActionResult(await _barcodeCardService.GetByIdAsync(id));
+        [HttpPost]//--->eklme yaparken
+        public async Task<IActionResult> Create(CreateBarcodeCardRequest request) => CreateActionResult(await barcodeCardService.CreateAsync(request));
 
-//        [HttpGet("by-stockcard/{stockCardId}")]
-//        public async Task<IActionResult> GetByStockCardId(int stockCardId)
-//            => CreateActionResult(await _barcodeCardService.GetByStockCardIdAsync(stockCardId));
+        [HttpPut("{id}")]//---> güncelleme yaparken
+        public async Task<IActionResult> Update(int id, UpdateBarcodeCardRequest request) => CreateActionResult(await barcodeCardService.UpdateAsync(id, request));
 
-//        [HttpPost]
-//        public async Task<IActionResult> Create(CreateBarcodeCardRequest request)
-//            => CreateActionResult(await _barcodeCardService.CreateAsync(request));
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id) => CreateActionResult(await barcodeCardService.DeleteAsync(id));
 
-//        [HttpPut("{id}")]
-//        public async Task<IActionResult> Update(int id, UpdateBarcodeCardRequest request)
-//            => CreateActionResult(await _barcodeCardService.UpdateAsync(id, request));
+        [HttpPut("{id}/set-default")]
+        public async Task<IActionResult> SetAsDefault(int id) => CreateActionResult(await barcodeCardService.SetAsDefaultAsync(id));
 
-//        [HttpDelete("{id}")]
-//        public async Task<IActionResult> Delete(int id)
-//            => CreateActionResult(await _barcodeCardService.DeleteAsync(id));
-
-//        [HttpPut("{id}/set-default")]
-//        public async Task<IActionResult> SetAsDefault(int id)
-//            => CreateActionResult(await _barcodeCardService.SetAsDefaultAsync(id));
-
-//        [HttpGet("validate")]
-//        public async Task<IActionResult> Validate([FromQuery] string barcodeCode, [FromQuery] BarcodeType barcodeType)
-//            => CreateActionResult(await _barcodeCardService.ValidateBarcodeAsync(barcodeCode, barcodeType));
-//    }
-//}
+        [HttpGet("validate")]
+        public async Task<IActionResult> ValidateBarcode([FromQuery] string barcodeCode, [FromQuery] BarcodeType barcodeType) => CreateActionResult(await barcodeCardService.ValidateBarcodeAsync(barcodeCode, barcodeType));
+    }
+}

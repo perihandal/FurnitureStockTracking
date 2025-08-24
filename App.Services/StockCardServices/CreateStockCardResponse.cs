@@ -6,6 +6,5 @@ using System.Threading.Tasks;
 
 namespace App.Services.StockCardServices
 {
-    public record class CreateStockCardResponse(int Id);
-  
+    public record class CreateStockCardResponse(int Id, string? DefaultBarcodeCode = null);
 }
