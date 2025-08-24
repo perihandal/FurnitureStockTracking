@@ -48,12 +48,26 @@ namespace App.Services.StockCardServices
 
         public async Task<ServiceResult<CreateStockCardResponse>> CreateAsync(CreateStockCardRequest request)
         {
-            var anyStockCard = await stockcardRepository.Where(x => x.Name = request.Name).AnyAsync();
+            var anyStockCard = await stockcardRepository
+                .Where(x => x.CompanyId == request.CompanyId && x.Name == request.Name)
+                .AnyAsync();
             if (anyStockCard)
             {
-                return ServiceResult<CreateStockCardResponse>.Fail("Ürün İsmi bulunamamktadır.", HttpStatusCode.BadRequest);
+                return ServiceResult<CreateStockCardResponse>.Fail("Bu isimde bir ürün zaten mevcut.", HttpStatusCode.BadRequest);
+
             }
 
+            var anyStockCardWithCode = await stockcardRepository
+                .Where(x => x.CompanyId == request.CompanyId && x.Code == request.Code)
+                .AnyAsync();
+
+            if (anyStockCardWithCode)
+            {
+                return ServiceResult<CreateStockCardResponse>.Fail(
+                    "Bu stok kodu zaten mevcut.",
+                    HttpStatusCode.BadRequest
+                );
+            }
             var stockcard = new StockCard()
             {
                 Name = request.Name,
