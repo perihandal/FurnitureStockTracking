@@ -18,6 +18,7 @@ using App.Services.BarcodeCardValidationService;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using System.Reflection;
+using App.Services.Auth;
 
 namespace App.Services.ServiceExtensions
 {
@@ -40,6 +41,7 @@ namespace App.Services.ServiceExtensions
             services.AddScoped<IBarcodeCardService, BarcodeCardService>();
             services.AddScoped<IBarcodeGeneratorService, BarcodeGeneratorService>();
             services.AddScoped<IBarcodeValidationService, BarcodeValidationService>();
+            services.AddScoped<IAuthService, AuthService>();
 
             services.AddFluentValidationAutoValidation();
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());

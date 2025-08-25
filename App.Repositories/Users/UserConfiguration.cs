@@ -10,6 +10,7 @@ namespace App.Repositories.Users
             builder.ToTable("Users");
 
             builder.HasKey(u => u.Id);
+            builder.Property(u => u.Id).ValueGeneratedOnAdd();
 
             builder.Property(u => u.Username)
                 .IsRequired()
@@ -23,6 +24,12 @@ namespace App.Repositories.Users
                 .IsRequired()
                 .HasMaxLength(100);
 
+            builder.Property(u => u.PasswordHash)
+                .HasColumnType("varbinary(256)");
+
+            builder.Property(u => u.PasswordSalt)
+                .HasColumnType("varbinary(128)");
+
             builder.Property(u => u.IsActive)
                 .HasDefaultValue(true);  // Varsayılan olarak aktif
 
@@ -32,12 +39,12 @@ namespace App.Repositories.Users
 
             // İlişkiler (HasMany ve WithMany)
             builder.HasMany(u => u.UserRoles)
-                .WithOne(a =>a.User)
+                .WithOne(a => a.User)
                 .HasForeignKey(ur => ur.UserId)
                 .OnDelete(DeleteBehavior.Cascade);  // Kullanıcı silindiğinde ilgili roller de silinsin
 
             builder.HasMany(u => u.Categories)
-                .WithOne(b =>b.User)
+                .WithOne(b => b.User)
                 .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.SetNull);  // Kullanıcı silindiğinde kategoriler silinmesin
 

@@ -17,6 +17,8 @@ namespace App.Repositories.Users
         public string Username { get; set; } = default!;
         public string FullName { get; set; } = default!;
         public string Email { get; set; } = default!;
+        public byte[]? PasswordHash { get; set; }
+        public byte[]? PasswordSalt { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
