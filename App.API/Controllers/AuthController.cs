@@ -3,12 +3,13 @@ using App.Services.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using App.Services.CompanyServices;
+using App.Repositories.Users;
 
 namespace App.API.Controllers
 {
     [ApiController]
     [Route("auth")]
-    public class AuthController(IAuthService authService, ITokenService tokenService, IOptions<TokenOptions> tokenOptions, ICompanyService companyService) : ControllerBase
+    public class AuthController(IAuthService authService, ITokenService tokenService, IOptions<TokenOptions> tokenOptions, ICompanyService companyService, IUserRepository userRepository) : ControllerBase
     {
         public record LoginRequest(string Username, string Password);
         public record LoginResponse(
@@ -264,26 +265,37 @@ namespace App.API.Controllers
                 return BadRequest(new { error = "Geçersiz şirket ID" });
             }
 
-            Console.WriteLine($"Step 2: Creating user info");
+            Console.WriteLine($"Step 2: Getting user details");
+            
+            // Gerçek user bilgilerini veritabanından çek
+            var userEntity = await userRepository.GetByIdAsync(userId);
+            if (userEntity == null)
+            {
+                return BadRequest(new { error = "Kullanıcı bulunamadı" });
+            }
+            
+            Console.WriteLine($"Step 2.1: Creating user info with real data");
             
             var userInfo = new UserInfo(
-                userId,
-                User.FindFirst("unique_name")?.Value ?? "user",
-                User.FindFirst("name")?.Value ?? "User Name",
-                "user@example.com", // TODO: Gerçek email'i user'dan çek
+                userEntity.Id,
+                userEntity.Username,
+                userEntity.FullName,
+                userEntity.Email,
                 roles,
                 new CompanyInfo(selectedCompany.Id, selectedCompany.Name, selectedCompany.Code),
                 request.BranchId.HasValue ? new BranchInfo(request.BranchId.Value, $"Şube {request.BranchId.Value}", request.CompanyId) : null
             );
+            
+            Console.WriteLine($"UserInfo created: {userInfo.Username}, Company: {userInfo.Company?.Name}");
 
             Console.WriteLine($"Step 3: Creating token");
             
             // Yeni token oluştur (şirket bilgileri ile)
             var opts = tokenOptions.Value;
             var token = tokenService.CreateToken(
-                userId, 
-                User.FindFirst("unique_name")?.Value ?? "user",
-                User.FindFirst("name")?.Value ?? "User Name",
+                userEntity.Id, 
+                userEntity.Username,
+                userEntity.FullName,
                 roles, 
                 request.CompanyId, 
                 request.BranchId, 
