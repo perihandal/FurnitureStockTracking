@@ -1,4 +1,4 @@
-﻿using App.Repositories.Warehouses;
+using App.Repositories.Warehouses;
 using App.Repositories.PriceDefinitions;
 using App.Repositories.Categories;
 using App.Repositories.UserRoles;
@@ -21,6 +21,13 @@ namespace App.Repositories.Users
         public byte[]? PasswordSalt { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        
+        // Şirket ve şube bilgileri (Editor ve User rolleri için)
+        public int? CompanyId { get; set; }
+        public Company? Company { get; set; }
+        
+        public int? BranchId { get; set; }
+        public Branch? Branch { get; set; }
 
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
         public ICollection<Category> Categories { get; set; } = new List<Category>();

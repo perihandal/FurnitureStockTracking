@@ -1,4 +1,4 @@
-﻿using App.API.Auth;
+using App.API.Auth;
 using App.Services.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -26,7 +26,7 @@ namespace App.API.Controllers
             }
 
             var opts = tokenOptions.Value;
-            var token = tokenService.CreateToken(result.User!.Id, result.User.Username, result.User.FullName, result.Roles, opts, out var exp);
+            var token = tokenService.CreateToken(result.User!.Id, result.User.Username, result.User.FullName, result.Roles, result.User.CompanyId, result.User.BranchId, opts, out var exp);
             var rt = await authService.IssueRefreshTokenAsync(result.User.Id);
             return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value));
         }
@@ -52,7 +52,7 @@ namespace App.API.Controllers
                 return Unauthorized(new { error = result.Error });
 
             var opts = tokenOptions.Value;
-            var token = tokenService.CreateToken(result.User!.Id, result.User.Username, result.User.FullName, result.Roles, opts, out var exp);
+            var token = tokenService.CreateToken(result.User!.Id, result.User.Username, result.User.FullName, result.Roles, result.User.CompanyId, result.User.BranchId, opts, out var exp);
             var rt = await authService.IssueRefreshTokenAsync(result.User.Id);
             return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value));
         }
