@@ -34,6 +34,7 @@ namespace App.API.Controllers
         public record RefreshRequest(string RefreshToken);
         public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
         public record AssignUserToCompanyRequest(int UserId, int CompanyId, int? BranchId);
+        public record SelectCompanyRequest(int CompanyId, int? BranchId);
 
         [Microsoft.AspNetCore.Authorization.AllowAnonymous]
         [HttpPost("login")]
@@ -197,6 +198,62 @@ namespace App.API.Controllers
                     return Ok(new List<object>());
                 }
             }
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpPost("select-company")]
+        public async Task<IActionResult> SelectCompany([FromBody] SelectCompanyRequest request)
+        {
+            // Kullanıcının ID'sini al
+            var userIdClaim = User.Claims.FirstOrDefault(c => 
+                c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub || 
+                c.Type == "sub" || 
+                c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { error = "Invalid user" });
+            }
+
+            var roles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+            
+            // Admin her şirketi seçebilir
+            // Editor/User sadece atandığı şirketi seçebilir (şimdilik kontrol etmiyoruz)
+            
+            Console.WriteLine($"User {userId} selecting company {request.CompanyId}");
+
+            // TODO: Gerçek implementasyon:
+            // 1. Kullanıcının bu şirketi seçme yetkisi var mı kontrol et
+            // 2. Kullanıcının CompanyId ve BranchId'sini güncelle
+            // 3. Yeni JWT token oluştur ve döndür
+
+            // Şimdilik mock response döndürelim
+            var mockUser = new UserInfo(
+                userId,
+                User.FindFirst("unique_name")?.Value ?? "user",
+                User.FindFirst("name")?.Value ?? "User Name",
+                "user@example.com",
+                roles,
+                new CompanyInfo(request.CompanyId, $"Şirket {request.CompanyId}", $"COMP{request.CompanyId:000}"),
+                request.BranchId.HasValue ? new BranchInfo(request.BranchId.Value, $"Şube {request.BranchId.Value}", request.CompanyId) : null
+            );
+
+            // Yeni token oluştur (şirket bilgileri ile)
+            var opts = tokenOptions.Value;
+            var token = tokenService.CreateToken(
+                userId, 
+                User.FindFirst("unique_name")?.Value ?? "user",
+                User.FindFirst("name")?.Value ?? "User Name",
+                roles, 
+                request.CompanyId, 
+                request.BranchId, 
+                opts, 
+                out var exp
+            );
+            
+            var rt = await authService.IssueRefreshTokenAsync(userId);
+
+            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, mockUser));
         }
 
         [Microsoft.AspNetCore.Authorization.Authorize]
