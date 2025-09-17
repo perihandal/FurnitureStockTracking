@@ -144,20 +144,39 @@ namespace App.API.Controllers
         [HttpGet("companies")]
         public async Task<IActionResult> GetAvailableCompanies()
         {
+            // Debug için tüm claim'leri logla
+            var allClaims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+            Console.WriteLine($"All claims: {string.Join(", ", allClaims.Select(c => $"{c.Type}={c.Value}"))}");
+            
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                Console.WriteLine("Sub claim not found");
+                return Unauthorized(new { error = "Sub claim not found" });
+            }
+            
             if (!int.TryParse(userIdClaim, out var userId))
-                return Unauthorized();
+            {
+                Console.WriteLine($"Cannot parse userId from: {userIdClaim}");
+                return Unauthorized(new { error = "Invalid user ID" });
+            }
 
             var roles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+            Console.WriteLine($"User roles: {string.Join(", ", roles)}");
             
-            // Admin: Tüm şirketler
-            // Editor/User: Atandığı şirket (şu an için sadece bir şirket)
-            
-            // TODO: CompanyService implement edilecek
-            // var result = await companyService.GetAvailableCompaniesAsync(userId, roles);
-            // return CreateActionResult(result);
-            
-            return Ok(new { message = "Available companies retrieved successfully" });
+            return Ok(new { 
+                message = "Available companies retrieved successfully",
+                userId = userId,
+                roles = roles,
+                allClaims = allClaims
+            });
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok(new { message = "Test successful", isAuthenticated = User.Identity?.IsAuthenticated });
         }
     }
 }

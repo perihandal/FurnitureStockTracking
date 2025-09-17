@@ -79,7 +79,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtSection.Issuer,
             ValidAudience = jwtSection.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(key),
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            ValidateLifetime = true
+        };
+        
+        // Debug iÃ§in event handler'lar ekleyelim
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"JWT Authentication failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("JWT Token validated successfully");
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                Console.WriteLine($"JWT Challenge: {context.Error}, {context.ErrorDescription}");
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -92,7 +113,7 @@ if (app.Environment.IsDevelopment())
 }
 
 
-// CORS middleware'ini en baþta ekle
+// CORS middleware'ini en baï¿½ta ekle
 app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
