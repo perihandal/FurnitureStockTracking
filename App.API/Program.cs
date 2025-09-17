@@ -6,8 +6,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using App.API.Auth;
+using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// JWT claim mapping'i devre dışı bırak (sub claim'ini preserve etmek için)
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 // CORS Policy ekle
 builder.Services.AddCors(options =>
@@ -79,7 +83,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtSection.Issuer,
             ValidAudience = jwtSection.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(key),
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            ValidateLifetime = true
+        };
+        
+        // Debug için event handler'lar ekleyelim
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"JWT Authentication failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("JWT Token validated successfully");
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                Console.WriteLine($"JWT Challenge: {context.Error}, {context.ErrorDescription}");
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -92,7 +117,7 @@ if (app.Environment.IsDevelopment())
 }
 
 
-// CORS middleware'ini en ba�ta ekle
+// CORS middleware'ini en ba�ta ekle
 app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();

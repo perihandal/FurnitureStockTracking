@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -10,7 +10,7 @@ namespace App.API.Auth
 {
     public class TokenService : ITokenService
     {
-        public string CreateToken(int userId, string username, string fullName, IEnumerable<string> roles, TokenOptions options, out DateTime expiresAtUtc)
+        public string CreateToken(int userId, string username, string fullName, IEnumerable<string> roles, int? companyId, int? branchId, TokenOptions options, out DateTime expiresAtUtc)
         {
             var claims = new List<Claim>
             {
@@ -22,6 +22,17 @@ namespace App.API.Auth
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            // Şirket ve şube bilgilerini token'a ekle (Editor ve User rolleri için)
+            if (companyId.HasValue)
+            {
+                claims.Add(new Claim("companyId", companyId.Value.ToString()));
+            }
+
+            if (branchId.HasValue)
+            {
+                claims.Add(new Claim("branchId", branchId.Value.ToString()));
             }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.Secret));

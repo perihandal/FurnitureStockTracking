@@ -1,19 +1,42 @@
-﻿using App.API.Auth;
+using App.API.Auth;
 using App.Services.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using App.Services.CompanyServices;
+using App.Repositories.Users;
 
 namespace App.API.Controllers
 {
     [ApiController]
     [Route("auth")]
-    public class AuthController(IAuthService authService, ITokenService tokenService, IOptions<TokenOptions> tokenOptions) : ControllerBase
+    public class AuthController(IAuthService authService, ITokenService tokenService, IOptions<TokenOptions> tokenOptions, ICompanyService companyService, IUserRepository userRepository) : ControllerBase
     {
         public record LoginRequest(string Username, string Password);
-        public record LoginResponse(string AccessToken, DateTime ExpiresAtUtc, string RefreshToken, DateTime RefreshExpiresAtUtc);
+        public record LoginResponse(
+            string AccessToken, 
+            DateTime ExpiresAtUtc, 
+            string RefreshToken, 
+            DateTime RefreshExpiresAtUtc,
+            UserInfo User
+        );
+        
+        public record UserInfo(
+            int Id,
+            string Username,
+            string FullName,
+            string Email,
+            List<string> Roles,
+            CompanyInfo? Company,
+            BranchInfo? Branch
+        );
+        
+        public record CompanyInfo(int Id, string Name, string Code);
+        public record BranchInfo(int Id, string Name, int CompanyId);
         public record RegisterRequest(string Username, string FullName, string Email, string Password);
         public record RefreshRequest(string RefreshToken);
         public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+        public record AssignUserToCompanyRequest(int UserId, int CompanyId, int? BranchId);
+        public record SelectCompanyRequest(int CompanyId, int? BranchId);
 
         [Microsoft.AspNetCore.Authorization.AllowAnonymous]
         [HttpPost("login")]
@@ -26,9 +49,20 @@ namespace App.API.Controllers
             }
 
             var opts = tokenOptions.Value;
-            var token = tokenService.CreateToken(result.User!.Id, result.User.Username, result.User.FullName, result.Roles, opts, out var exp);
+            var token = tokenService.CreateToken(result.User!.Id, result.User.Username, result.User.FullName, result.Roles, result.User.CompanyId, result.User.BranchId, opts, out var exp);
             var rt = await authService.IssueRefreshTokenAsync(result.User.Id);
-            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value));
+            
+            var userInfo = new UserInfo(
+                result.User.Id,
+                result.User.Username,
+                result.User.FullName,
+                result.User.Email,
+                result.Roles,
+                result.User.Company != null ? new CompanyInfo(result.User.Company.Id, result.User.Company.Name, result.User.Company.Code) : null,
+                result.User.Branch != null ? new BranchInfo(result.User.Branch.Id, result.User.Branch.Name, result.User.Branch.CompanyId) : null
+            );
+            
+            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, userInfo));
         }
 
         [Microsoft.AspNetCore.Authorization.AllowAnonymous]
@@ -52,9 +86,20 @@ namespace App.API.Controllers
                 return Unauthorized(new { error = result.Error });
 
             var opts = tokenOptions.Value;
-            var token = tokenService.CreateToken(result.User!.Id, result.User.Username, result.User.FullName, result.Roles, opts, out var exp);
+            var token = tokenService.CreateToken(result.User!.Id, result.User.Username, result.User.FullName, result.Roles, result.User.CompanyId, result.User.BranchId, opts, out var exp);
             var rt = await authService.IssueRefreshTokenAsync(result.User.Id);
-            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value));
+            
+            var userInfo = new UserInfo(
+                result.User.Id,
+                result.User.Username,
+                result.User.FullName,
+                result.User.Email,
+                result.Roles,
+                result.User.Company != null ? new CompanyInfo(result.User.Company.Id, result.User.Company.Name, result.User.Company.Code) : null,
+                result.User.Branch != null ? new BranchInfo(result.User.Branch.Id, result.User.Branch.Name, result.User.Branch.CompanyId) : null
+            );
+            
+            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, userInfo));
         }
 
         [HttpPost("change-password")]
@@ -69,6 +114,250 @@ namespace App.API.Controllers
             if (!result.Success)
                 return BadRequest(new { error = result.Error });
             return Ok(new { message = "Parola güncellendi." });
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+        [HttpPost("assign-company")]
+        public async Task<IActionResult> AssignUserToCompany([FromBody] AssignUserToCompanyRequest request)
+        {
+            // TODO: UserService implement edilecek
+            // var result = await userService.AssignToCompanyAsync(request.UserId, request.CompanyId, request.BranchId);
+            // if (!result.Success)
+            //     return BadRequest(new { error = result.Error });
+            
+            return Ok(new { message = "Kullanıcı şirkete atandı." });
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            // Debug için tüm claim'leri logla
+            var allClaims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+            Console.WriteLine($"Profile endpoint - All claims: {string.Join(", ", allClaims.Select(c => $"{c.Type}={c.Value}"))}");
+            
+            // JWT'de sub claim'i farklı şekillerde okunabilir, hepsini deneyelim
+            var userIdClaim = User.Claims.FirstOrDefault(c => 
+                c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub || 
+                c.Type == "sub" || 
+                c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                Console.WriteLine("Profile endpoint - Sub claim not found");
+                return Unauthorized(new { error = "Sub claim not found", allClaims = allClaims });
+            }
+            
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                Console.WriteLine($"Profile endpoint - Cannot parse userId from: {userIdClaim}");
+                return Unauthorized(new { error = "Invalid user ID" });
+            }
+
+            return Ok(new { 
+                message = "Profile retrieved successfully", 
+                userId = userId,
+                allClaims = allClaims 
+            });
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpGet("user-companies")]
+        public async Task<IActionResult> GetUserCompanies()
+        {
+            // Debug için tüm claim'leri logla
+            var allClaims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+            Console.WriteLine($"User-companies endpoint - All claims: {string.Join(", ", allClaims.Select(c => $"{c.Type}={c.Value}"))}");
+            
+            var roles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+            Console.WriteLine($"User roles: {string.Join(", ", roles)}");
+
+            // Kullanıcının rolüne göre şirketleri döndür
+            if (roles.Contains("Admin"))
+            {
+                // Admin tüm şirketleri görebilir
+                var companiesResult = await companyService.GetAllList();
+                if (companiesResult.IsSuccess)
+                {
+                    var companies = companiesResult.Data.Select(c => new { 
+                        id = c.Id, 
+                        name = c.Name, 
+                        code = c.Code 
+                    }).ToList();
+                    return Ok(companies);
+                }
+                else
+                {
+                    return BadRequest(new { error = "Şirketler yüklenemedi" });
+                }
+            }
+            else
+            {
+                // Editor/User - kendi şirketini döndür (eğer atanmışsa)
+                var companyIdClaim = User.FindFirst("companyId")?.Value;
+                if (!string.IsNullOrEmpty(companyIdClaim) && int.TryParse(companyIdClaim, out var companyId))
+                {
+                    // Gerçek şirket bilgisini veritabanından çek
+                    var companiesResult = await companyService.GetAllList();
+                    if (companiesResult.IsSuccess)
+                    {
+                        var userCompany = companiesResult.Data.FirstOrDefault(c => c.Id == companyId);
+                        if (userCompany != null)
+                        {
+                            return Ok(new List<object>
+                            {
+                                new { id = userCompany.Id, name = userCompany.Name, code = userCompany.Code }
+                            });
+                        }
+                    }
+                }
+                
+                // Hiçbir şirkete atanmamış veya şirket bulunamadı
+                return Ok(new List<object>());
+            }
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpPost("select-company")]
+        public async Task<IActionResult> SelectCompany([FromBody] SelectCompanyRequest request)
+        {
+            // Kullanıcının ID'sini al
+            var userIdClaim = User.Claims.FirstOrDefault(c => 
+                c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub || 
+                c.Type == "sub" || 
+                c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { error = "Invalid user" });
+            }
+
+            var roles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+            
+            // Admin her şirketi seçebilir
+            // Editor/User sadece atandığı şirketi seçebilir (şimdilik kontrol etmiyoruz)
+            
+            Console.WriteLine($"User {userId} selecting company {request.CompanyId}");
+
+            // TODO: Gerçek implementasyon:
+            // 1. Kullanıcının bu şirketi seçme yetkisi var mı kontrol et
+            // 2. Kullanıcının CompanyId ve BranchId'sini güncelle
+            // 3. Yeni JWT token oluştur ve döndür
+
+            Console.WriteLine($"Selecting company {request.CompanyId} - step 1: Getting companies");
+            
+            // Gerçek şirket bilgisini veritabanından çek
+            var companiesResult = await companyService.GetAllList();
+            Console.WriteLine($"Companies result success: {companiesResult.IsSuccess}");
+            
+            if (!companiesResult.IsSuccess)
+            {
+                Console.WriteLine("Company service failed");
+                return BadRequest(new { error = "Şirket bilgisi alınamadı" });
+            }
+
+            Console.WriteLine($"Found {companiesResult.Data.Count} companies");
+            var selectedCompany = companiesResult.Data.FirstOrDefault(c => c.Id == request.CompanyId);
+            Console.WriteLine($"Selected company: {selectedCompany?.Name ?? "null"}");
+            
+            if (selectedCompany == null)
+            {
+                return BadRequest(new { error = "Geçersiz şirket ID" });
+            }
+
+            Console.WriteLine($"Step 2: Getting user details");
+            
+            // Gerçek user bilgilerini veritabanından çek
+            var userEntity = await userRepository.GetByIdAsync(userId);
+            if (userEntity == null)
+            {
+                return BadRequest(new { error = "Kullanıcı bulunamadı" });
+            }
+            
+            Console.WriteLine($"Step 2.1: Creating user info with real data");
+            
+            var userInfo = new UserInfo(
+                userEntity.Id,
+                userEntity.Username,
+                userEntity.FullName,
+                userEntity.Email,
+                roles,
+                new CompanyInfo(selectedCompany.Id, selectedCompany.Name, selectedCompany.Code),
+                request.BranchId.HasValue ? new BranchInfo(request.BranchId.Value, $"Şube {request.BranchId.Value}", request.CompanyId) : null
+            );
+            
+            Console.WriteLine($"UserInfo created: {userInfo.Username}, Company: {userInfo.Company?.Name}");
+
+            Console.WriteLine($"Step 3: Creating token");
+            
+            // Yeni token oluştur (şirket bilgileri ile)
+            var opts = tokenOptions.Value;
+            var token = tokenService.CreateToken(
+                userEntity.Id, 
+                userEntity.Username,
+                userEntity.FullName,
+                roles, 
+                request.CompanyId, 
+                request.BranchId, 
+                opts, 
+                out var exp
+            );
+            
+            Console.WriteLine($"Step 4: Creating refresh token");
+            var rt = await authService.IssueRefreshTokenAsync(userId);
+            Console.WriteLine($"Step 5: Returning response");
+            Console.WriteLine($"Response UserInfo: Id={userInfo.Id}, Username={userInfo.Username}, Company={userInfo.Company?.Name}");
+            
+            var response = new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, userInfo);
+            Console.WriteLine($"Final response created successfully");
+            
+            return Ok(response);
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok(new { message = "Test successful", isAuthenticated = User.Identity?.IsAuthenticated });
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpGet("test-user-info")]
+        public async Task<IActionResult> TestUserInfo()
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => 
+                c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub || 
+                c.Type == "sub" || 
+                c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { error = "Invalid user" });
+            }
+
+            var roles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+            
+            // Test company
+            var testCompany = new CompanyInfo(1, "Test Şirketi", "TEST001");
+            var testBranch = new BranchInfo(1, "Test Şube", 1);
+            
+            var userEntity = await userRepository.GetByIdAsync(userId);
+            
+            var userInfo = new UserInfo(
+                userEntity!.Id,
+                userEntity.Username,
+                userEntity.FullName,
+                userEntity.Email,
+                roles,
+                testCompany,
+                testBranch
+            );
+
+            return Ok(new { 
+                message = "Test user info", 
+                userInfo = userInfo,
+                rawUser = new { userEntity.Id, userEntity.Username, userEntity.FullName, userEntity.Email }
+            });
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using App.Repositories.Categories;
+using App.Repositories.Categories;
 using App.Repositories.Companies;
 using App.Repositories.StockCards;
 using App.Repositories.StockTransactions;
@@ -15,6 +15,7 @@ using App.Repositories.UserRoles;
 using App.Repositories.Roles;
 using App.Repositories.PriceHistories;
 using App.Repositories.WarehouseStocks;
+using App.Repositories.TransferRequests;
 
 namespace App.Repositories
 {
@@ -39,6 +40,7 @@ namespace App.Repositories
         public DbSet<User> Users { get; set; } = default!;
         public DbSet<UserRole> UserRoles { get; set; } = default!;
         public DbSet<Role> Roles { get; set; } = default!;
+        public DbSet<TransferRequest> TransferRequests { get; set; } = default!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

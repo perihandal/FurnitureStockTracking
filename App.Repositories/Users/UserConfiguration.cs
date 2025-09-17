@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace App.Repositories.Users
@@ -36,6 +36,17 @@ namespace App.Repositories.Users
             builder.Property(u => u.CreatedDate)
                 .HasColumnType("datetime")
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");  // Varsayılan olarak şu anki zaman
+
+            // CompanyId ve BranchId için foreign key ilişkileri
+            builder.HasOne(u => u.Company)
+                .WithMany()
+                .HasForeignKey(u => u.CompanyId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(u => u.Branch)
+                .WithMany()
+                .HasForeignKey(u => u.BranchId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // İlişkiler (HasMany ve WithMany)
             builder.HasMany(u => u.UserRoles)
