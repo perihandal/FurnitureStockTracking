@@ -6,8 +6,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using App.API.Auth;
+using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// JWT claim mapping'i devre dışı bırak (sub claim'ini preserve etmek için)
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 // CORS Policy ekle
 builder.Services.AddCors(options =>

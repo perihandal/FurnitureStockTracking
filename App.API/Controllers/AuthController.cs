@@ -148,7 +148,12 @@ namespace App.API.Controllers
             var allClaims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
             Console.WriteLine($"All claims: {string.Join(", ", allClaims.Select(c => $"{c.Type}={c.Value}"))}");
             
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            // JWT'de sub claim'i farklı şekillerde okunabilir, hepsini deneyelim
+            var userIdClaim = User.Claims.FirstOrDefault(c => 
+                c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub || 
+                c.Type == "sub" || 
+                c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                
             if (string.IsNullOrEmpty(userIdClaim))
             {
                 Console.WriteLine("Sub claim not found");
