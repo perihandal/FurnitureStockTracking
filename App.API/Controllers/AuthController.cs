@@ -159,40 +159,44 @@ namespace App.API.Controllers
         }
 
         [Microsoft.AspNetCore.Authorization.Authorize]
-        [HttpGet("companies")]
-        public async Task<IActionResult> GetAvailableCompanies()
+        [HttpGet("user-companies")]
+        public async Task<IActionResult> GetUserCompanies()
         {
             // Debug için tüm claim'leri logla
             var allClaims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
-            Console.WriteLine($"All claims: {string.Join(", ", allClaims.Select(c => $"{c.Type}={c.Value}"))}");
+            Console.WriteLine($"User-companies endpoint - All claims: {string.Join(", ", allClaims.Select(c => $"{c.Type}={c.Value}"))}");
             
-            // JWT'de sub claim'i farklı şekillerde okunabilir, hepsini deneyelim
-            var userIdClaim = User.Claims.FirstOrDefault(c => 
-                c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub || 
-                c.Type == "sub" || 
-                c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                Console.WriteLine("Sub claim not found");
-                return Unauthorized(new { error = "Sub claim not found" });
-            }
-            
-            if (!int.TryParse(userIdClaim, out var userId))
-            {
-                Console.WriteLine($"Cannot parse userId from: {userIdClaim}");
-                return Unauthorized(new { error = "Invalid user ID" });
-            }
-
             var roles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
             Console.WriteLine($"User roles: {string.Join(", ", roles)}");
-            
-            return Ok(new { 
-                message = "Available companies retrieved successfully",
-                userId = userId,
-                roles = roles,
-                allClaims = allClaims
-            });
+
+            // Kullanıcının rolüne göre şirketleri döndür
+            if (roles.Contains("Admin"))
+            {
+                // Admin tüm şirketleri görebilir - şimdilik mock data
+                return Ok(new List<object>
+                {
+                    new { id = 1, name = "ABC Şirketi", code = "ABC001" },
+                    new { id = 2, name = "XYZ Şirketi", code = "XYZ002" }
+                });
+            }
+            else
+            {
+                // Editor/User - kendi şirketini döndür (eğer atanmışsa)
+                var companyIdClaim = User.FindFirst("companyId")?.Value;
+                if (!string.IsNullOrEmpty(companyIdClaim) && int.TryParse(companyIdClaim, out var companyId))
+                {
+                    // TODO: Gerçek şirket bilgisini veritabanından çek
+                    return Ok(new List<object>
+                    {
+                        new { id = companyId, name = $"Şirket {companyId}", code = $"COMP{companyId:000}" }
+                    });
+                }
+                else
+                {
+                    // Hiçbir şirkete atanmamış
+                    return Ok(new List<object>());
+                }
+            }
         }
 
         [Microsoft.AspNetCore.Authorization.Authorize]
