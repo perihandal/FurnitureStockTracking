@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -31,6 +31,8 @@ namespace App.Services.Auth
                 .GetAll()
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
+                .Include(u => u.Company)
+                .Include(u => u.Branch)
                 .FirstOrDefaultAsync(u => u.Username == username && u.IsActive);
 
             if (user == null)
@@ -98,6 +100,8 @@ namespace App.Services.Auth
                 .GetAll()
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
+                .Include(u => u.Company)
+                .Include(u => u.Branch)
                 .FirstAsync(u => u.Id == rt.UserId);
 
             var roles = user.UserRoles.Select(ur => ur.Role.Name).Distinct().ToList();

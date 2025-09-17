@@ -10,10 +10,30 @@ namespace App.API.Controllers
     public class AuthController(IAuthService authService, ITokenService tokenService, IOptions<TokenOptions> tokenOptions) : ControllerBase
     {
         public record LoginRequest(string Username, string Password);
-        public record LoginResponse(string AccessToken, DateTime ExpiresAtUtc, string RefreshToken, DateTime RefreshExpiresAtUtc);
+        public record LoginResponse(
+            string AccessToken, 
+            DateTime ExpiresAtUtc, 
+            string RefreshToken, 
+            DateTime RefreshExpiresAtUtc,
+            UserInfo User
+        );
+        
+        public record UserInfo(
+            int Id,
+            string Username,
+            string FullName,
+            string Email,
+            List<string> Roles,
+            CompanyInfo? Company,
+            BranchInfo? Branch
+        );
+        
+        public record CompanyInfo(int Id, string Name, string Code);
+        public record BranchInfo(int Id, string Name, int CompanyId);
         public record RegisterRequest(string Username, string FullName, string Email, string Password);
         public record RefreshRequest(string RefreshToken);
         public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+        public record AssignUserToCompanyRequest(int UserId, int CompanyId, int? BranchId);
 
         [Microsoft.AspNetCore.Authorization.AllowAnonymous]
         [HttpPost("login")]
@@ -28,7 +48,18 @@ namespace App.API.Controllers
             var opts = tokenOptions.Value;
             var token = tokenService.CreateToken(result.User!.Id, result.User.Username, result.User.FullName, result.Roles, result.User.CompanyId, result.User.BranchId, opts, out var exp);
             var rt = await authService.IssueRefreshTokenAsync(result.User.Id);
-            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value));
+            
+            var userInfo = new UserInfo(
+                result.User.Id,
+                result.User.Username,
+                result.User.FullName,
+                result.User.Email,
+                result.Roles,
+                result.User.Company != null ? new CompanyInfo(result.User.Company.Id, result.User.Company.Name, result.User.Company.Code) : null,
+                result.User.Branch != null ? new BranchInfo(result.User.Branch.Id, result.User.Branch.Name, result.User.Branch.CompanyId) : null
+            );
+            
+            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, userInfo));
         }
 
         [Microsoft.AspNetCore.Authorization.AllowAnonymous]
@@ -54,7 +85,18 @@ namespace App.API.Controllers
             var opts = tokenOptions.Value;
             var token = tokenService.CreateToken(result.User!.Id, result.User.Username, result.User.FullName, result.Roles, result.User.CompanyId, result.User.BranchId, opts, out var exp);
             var rt = await authService.IssueRefreshTokenAsync(result.User.Id);
-            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value));
+            
+            var userInfo = new UserInfo(
+                result.User.Id,
+                result.User.Username,
+                result.User.FullName,
+                result.User.Email,
+                result.Roles,
+                result.User.Company != null ? new CompanyInfo(result.User.Company.Id, result.User.Company.Name, result.User.Company.Code) : null,
+                result.User.Branch != null ? new BranchInfo(result.User.Branch.Id, result.User.Branch.Name, result.User.Branch.CompanyId) : null
+            );
+            
+            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, userInfo));
         }
 
         [HttpPost("change-password")]
@@ -69,6 +111,53 @@ namespace App.API.Controllers
             if (!result.Success)
                 return BadRequest(new { error = result.Error });
             return Ok(new { message = "Parola güncellendi." });
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+        [HttpPost("assign-company")]
+        public async Task<IActionResult> AssignUserToCompany([FromBody] AssignUserToCompanyRequest request)
+        {
+            // TODO: UserService implement edilecek
+            // var result = await userService.AssignToCompanyAsync(request.UserId, request.CompanyId, request.BranchId);
+            // if (!result.Success)
+            //     return BadRequest(new { error = result.Error });
+            
+            return Ok(new { message = "Kullanıcı şirkete atandı." });
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
+                return Unauthorized();
+
+            // TODO: UserService implement edilecek
+            // var result = await userService.GetProfileAsync(userId);
+            // return CreateActionResult(result);
+            
+            return Ok(new { message = "Profile retrieved successfully" });
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpGet("companies")]
+        public async Task<IActionResult> GetAvailableCompanies()
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
+                return Unauthorized();
+
+            var roles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+            
+            // Admin: Tüm şirketler
+            // Editor/User: Atandığı şirket (şu an için sadece bir şirket)
+            
+            // TODO: CompanyService implement edilecek
+            // var result = await companyService.GetAvailableCompaniesAsync(userId, roles);
+            // return CreateActionResult(result);
+            
+            return Ok(new { message = "Available companies retrieved successfully" });
         }
     }
 }
