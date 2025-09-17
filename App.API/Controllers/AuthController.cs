@@ -243,19 +243,29 @@ namespace App.API.Controllers
             // 2. Kullanıcının CompanyId ve BranchId'sini güncelle
             // 3. Yeni JWT token oluştur ve döndür
 
+            Console.WriteLine($"Selecting company {request.CompanyId} - step 1: Getting companies");
+            
             // Gerçek şirket bilgisini veritabanından çek
             var companiesResult = await companyService.GetAllList();
+            Console.WriteLine($"Companies result success: {companiesResult.IsSuccess}");
+            
             if (!companiesResult.IsSuccess)
             {
+                Console.WriteLine("Company service failed");
                 return BadRequest(new { error = "Şirket bilgisi alınamadı" });
             }
 
+            Console.WriteLine($"Found {companiesResult.Data.Count} companies");
             var selectedCompany = companiesResult.Data.FirstOrDefault(c => c.Id == request.CompanyId);
+            Console.WriteLine($"Selected company: {selectedCompany?.Name ?? "null"}");
+            
             if (selectedCompany == null)
             {
                 return BadRequest(new { error = "Geçersiz şirket ID" });
             }
 
+            Console.WriteLine($"Step 2: Creating user info");
+            
             var userInfo = new UserInfo(
                 userId,
                 User.FindFirst("unique_name")?.Value ?? "user",
@@ -266,6 +276,8 @@ namespace App.API.Controllers
                 request.BranchId.HasValue ? new BranchInfo(request.BranchId.Value, $"Şube {request.BranchId.Value}", request.CompanyId) : null
             );
 
+            Console.WriteLine($"Step 3: Creating token");
+            
             // Yeni token oluştur (şirket bilgileri ile)
             var opts = tokenOptions.Value;
             var token = tokenService.CreateToken(
@@ -279,7 +291,9 @@ namespace App.API.Controllers
                 out var exp
             );
             
+            Console.WriteLine($"Step 4: Creating refresh token");
             var rt = await authService.IssueRefreshTokenAsync(userId);
+            Console.WriteLine($"Step 5: Returning response");
 
             return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, userInfo));
         }
