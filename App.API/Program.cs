@@ -9,6 +9,17 @@ using App.API.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// CORS Policy ekle
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<FluentValidatiorFilter>();
@@ -79,6 +90,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+
+// CORS middleware'ini en baþta ekle
+app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 

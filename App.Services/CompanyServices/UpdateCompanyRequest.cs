@@ -12,7 +12,6 @@ namespace App.Services.CompanyServices
         string TaxNumber,
         string Address,
         string Phone,
-        bool IsActive,
-        int UserId
+        bool IsActive
     );
 }

@@ -9,5 +9,6 @@ namespace App.Repositories.Companies
     public interface ICompanyRepository : IGenericRepository<Company>
     {
         Task<List<Company>> GetAllWithDetailsAsync();
+
     }
 }

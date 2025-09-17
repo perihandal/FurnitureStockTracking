@@ -3,6 +3,7 @@ using App.Repositories;
 using App.Services.PriceDefinitionServices;
 using App.Services;
 using System.Net;
+using App.Repositories.StockCards;
 
 public class PriceHistoryService : IPriceHistoryService
 {
@@ -21,6 +22,7 @@ public class PriceHistoryService : IPriceHistoryService
 
         var priceHistoriesAsDto = priceHistory.Select(ph => new PriceHistoryDto
         {
+            StockCardId = ph.PriceDefinition.StockCard.Id,
             StockCardName = ph.PriceDefinition.StockCard.Name,
             OldPrice = ph.OldPrice,
             NewPrice = ph.NewPrice,
@@ -39,6 +41,7 @@ public class PriceHistoryService : IPriceHistoryService
 
         var priceHistoryAsDto = new PriceHistoryDto
         {
+            StockCardId = priceHistory.PriceDefinition.StockCard.Id,
             StockCardName = priceHistory.PriceDefinition.StockCard.Name,
             OldPrice = priceHistory.OldPrice,
             NewPrice = priceHistory.NewPrice,

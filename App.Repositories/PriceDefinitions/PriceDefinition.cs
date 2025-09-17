@@ -1,4 +1,5 @@
-﻿using App.Repositories.StockCards;
+﻿using App.Repositories.PriceHistories;
+using App.Repositories.StockCards;
 using App.Repositories.Users;
 
 namespace App.Repositories.PriceDefinitions
@@ -39,5 +40,7 @@ namespace App.Repositories.PriceDefinitions
 
         public int StockCardId { get; set; }
         public StockCard StockCard { get; set; } = default!;
+
+        public ICollection<PriceHistory> PriceHistories { get; set; } = new List<PriceHistory>();
     }
 }

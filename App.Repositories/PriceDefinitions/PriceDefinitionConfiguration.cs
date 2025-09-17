@@ -37,12 +37,17 @@ namespace App.Repositories.PriceDefinitions
             builder.HasOne(pd => pd.StockCard)
                    .WithMany(sc => sc.PriceDefinitions)
                    .HasForeignKey(pd => pd.StockCardId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                   .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(sc => sc.User)
                    .WithMany(p => p.PriceDefinitions)
                    .HasForeignKey(sc => sc.UserId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasMany(pd => pd.PriceHistories)
+                    .WithOne(ph => ph.PriceDefinition)
+                    .HasForeignKey(ph => ph.PriceDefinitionId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasIndex(pd => new { pd.StockCardId, pd.PriceType })
                    .IsUnique(); // Aynı StockCardId ve PriceType ile aynı fiyatın olmasını engeller

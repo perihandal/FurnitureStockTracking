@@ -24,6 +24,7 @@ namespace App.Repositories.BarcodeCards
             public string BarcodeCode { get; set; } = default!;  // Benzersiz Barkod Kodu
             public BarcodeType BarcodeType { get; set; }  // Barkod Tipi (enum olarak)
             public bool IsDefault { get; set; } = false;  // Varsayılan barkod mu?
+            public bool IsActive  = true;  // Varsayılan barkod mu?
 
             public int StockCardId { get; set; }  // İlgili Stok Kartı
             public StockCard StockCard { get; set; } = default!;

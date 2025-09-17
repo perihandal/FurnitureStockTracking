@@ -15,5 +15,8 @@ namespace App.API.Controllers
 
         [HttpGet] //---> istek yaparken
         public async Task<IActionResult> GetAll() => CreateActionResult(await wareHouseService.GetAllList());
+
+        //[HttpDelete("{id}")] // Depo silme
+        //public async Task<IActionResult> Delete(int id) => CreateActionResult(await wareHouseService.DeleteAsync(id));
     }
 }

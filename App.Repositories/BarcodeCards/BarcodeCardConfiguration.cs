@@ -26,6 +26,9 @@ namespace App.Repositories.BarcodeCards
             builder.Property(bc => bc.IsDefault)
                 .HasDefaultValue(false);
 
+            builder.Property(bc => bc.IsActive)
+                .HasDefaultValue(false);
+
             builder.Property(bc => bc.CreateDate)
                 .HasColumnType("datetime")
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");

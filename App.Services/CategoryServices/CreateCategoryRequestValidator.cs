@@ -1,14 +1,13 @@
 ﻿using App.Repositories.Categories;
 using FluentValidation;
-using System.Linq;
 
 namespace App.Services.CategoryServices
 {
-    public class CreateCategoryRequestValidatior : AbstractValidator<CreateCategoryRequest>
+    public class CreateCategoryRequestValidator : AbstractValidator<CreateCategoryRequest>
     {
         private readonly ICategoryRepository _categoryRepository;
 
-        public CreateCategoryRequestValidatior(ICategoryRepository categoryRepository)
+        public CreateCategoryRequestValidator(ICategoryRepository categoryRepository)
         {
             _categoryRepository = categoryRepository;
 

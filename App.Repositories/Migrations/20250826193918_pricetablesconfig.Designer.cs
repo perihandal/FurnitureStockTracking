@@ -4,6 +4,7 @@ using App.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace App.Repositories.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250826193918_pricetablesconfig")]
+    partial class pricetablesconfig
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -86,11 +89,6 @@ namespace App.Repositories.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsDefault")
                         .ValueGeneratedOnAdd()
@@ -382,12 +380,17 @@ namespace App.Repositories.Migrations
                     b.Property<int>("PriceDefinitionId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("PriceDefinitionId1")
+                        .HasColumnType("int");
+
                     b.Property<int>("PriceType")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PriceDefinitionId");
+
+                    b.HasIndex("PriceDefinitionId1");
 
                     b.ToTable("PriceHistories", (string)null);
                 });
@@ -863,10 +866,14 @@ namespace App.Repositories.Migrations
             modelBuilder.Entity("App.Repositories.PriceHistories.PriceHistory", b =>
                 {
                     b.HasOne("App.Repositories.PriceDefinitions.PriceDefinition", "PriceDefinition")
-                        .WithMany("PriceHistories")
+                        .WithMany()
                         .HasForeignKey("PriceDefinitionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("App.Repositories.PriceDefinitions.PriceDefinition", null)
+                        .WithMany("PriceHistories")
+                        .HasForeignKey("PriceDefinitionId1");
 
                     b.Navigation("PriceDefinition");
                 });

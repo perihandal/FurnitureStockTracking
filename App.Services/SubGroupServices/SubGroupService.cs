@@ -29,8 +29,8 @@ namespace App.Services.SubGroupServices
                 sg.Code,                                 // Code
                 sg.Name,                                 // Name
                 sg.IsActive,                             // IsActive
-                sg.UserId,                               // UserId
-                sg.MainGroupId                    // MainGroupId
+                sg.User.Id,                               // UserId
+                sg.MainGroup.Id                  // MainGroupId
                 //sg.StockCards.Select(sc => sc.Name).ToList() // StockCards isimlerini liste olarak al
             )).ToList();
 

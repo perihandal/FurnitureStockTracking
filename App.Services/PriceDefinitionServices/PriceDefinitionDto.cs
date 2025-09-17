@@ -11,7 +11,9 @@ namespace App.Services.PriceDefinitionServices
         public DateTime ValidFrom { get; set; }
         public DateTime? ValidTo { get; set; }
         public bool IsActive { get; set; }  
+        public int StockCardId { get; set; }  
         public string? StockCardName { get; set; }
+        public int UserId { get; set; }
         public string? UserFullName { get; set; }
     }
 }

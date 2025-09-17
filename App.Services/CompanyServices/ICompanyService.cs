@@ -11,5 +11,7 @@ namespace App.Services.CompanyServices
         Task<ServiceResult<CreateCompanyResponse>> CreateAsync(CreateCompanyRequest request);
         Task<ServiceResult> UpdateAsync(int id, UpdateCompanyRequest request);
         Task<ServiceResult<List<CompanyDto>>> GetAllList();
+        Task<ServiceResult> DeleteAsync(int id);
+
     }
 }

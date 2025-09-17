@@ -16,6 +16,8 @@ namespace App.Repositories.PriceHistories
         public decimal NewPrice { get; set; }
         public DateTime ChangeDate { get; set; } = DateTime.UtcNow;
 
+        public bool IsActive = true;
+
         public int PriceDefinitionId { get; set; }
         public PriceDefinition PriceDefinition { get; set; }
     }

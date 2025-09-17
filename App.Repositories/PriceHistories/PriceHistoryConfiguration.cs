@@ -24,8 +24,12 @@ namespace App.Repositories.PriceHistories
                 .HasColumnType("datetime")
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+            builder.Property(ph => ph.IsActive)
+                .HasDefaultValue(true);
+
+
             builder.HasOne(ph => ph.PriceDefinition) // PriceHistory ile PriceDefinition arasındaki ilişkiyi tanımlıyoruz
-                .WithMany()  // PriceDefinition'ın birden fazla PriceHistory'ye sahip olabileceğini belirtiyoruz
+                .WithMany(pd => pd.PriceHistories)  // PriceDefinition'ın birden fazla PriceHistory'ye sahip olabileceğini belirtiyoruz
                 .HasForeignKey(ph => ph.PriceDefinitionId)  // PriceHistory'deki PriceDefinitionId'yi PriceDefinition ile ilişkilendiriyoruz
                 .OnDelete(DeleteBehavior.Restrict);  // PriceDefinition silindiğinde PriceHistory'yi silmiyoruz
         }

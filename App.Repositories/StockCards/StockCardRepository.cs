@@ -27,7 +27,8 @@ namespace App.Repositories.StockCards
                 .Include(s => s.SubGroup)
                 .Include(s => s.Category)
                 .Include(s => s.User)
-              //  .Include(s => s.PriceDefinitions)
+                .Include(s => s.PriceDefinitions)
+                //.ThenInclude(pd => pd.PriceHistory)
                 .Include(s => s.BarcodeCards)
                 .ToListAsync();
         }

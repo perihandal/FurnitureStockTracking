@@ -22,5 +22,12 @@ namespace App.API.Controllers
         [HttpGet("{id}")] // Belirli bir şubeyi id ile almak için
         public async Task<IActionResult> GetById(int id)
             => CreateActionResult(await _branchService.GetByIdAsync(id));
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var result = await _branchService.DeleteAsync(id);
+            return CreateActionResult(result);
+        }
     }
 }

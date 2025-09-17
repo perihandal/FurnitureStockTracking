@@ -38,7 +38,9 @@ namespace App.Services.PriceDefinitionServices
                 ValidFrom = pd.ValidFrom,
                 ValidTo = pd.ValidTo,
                 IsActive = pd.ValidTo == null || pd.ValidTo > DateTime.UtcNow,
+                StockCardId = pd.StockCard.Id,
                 StockCardName = pd.StockCard.Name,
+                UserId = pd.User.Id,
                 UserFullName = pd.User.FullName
             }).ToList();
 
@@ -63,7 +65,9 @@ namespace App.Services.PriceDefinitionServices
                 ValidFrom = priceDefinition.ValidFrom,
                 ValidTo = priceDefinition.ValidTo,
                 IsActive = priceDefinition.ValidTo == null || priceDefinition.ValidTo > DateTime.UtcNow,
+                StockCardId = priceDefinition.StockCard.Id,
                 StockCardName = priceDefinition.StockCard.Name,
+                UserId = priceDefinition.User.Id,
                 UserFullName = priceDefinition.User.FullName
             };
 

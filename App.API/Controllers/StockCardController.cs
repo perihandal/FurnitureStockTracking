@@ -26,6 +26,10 @@ namespace App.API.Controllers
         public async Task<IActionResult> GetPagedAll(int pageNumber, int pageSize) =>
         CreateActionResult(await stockcardService.GetPagedAllListAsync(pageNumber, pageSize));
 
+        [Authorize(Roles = "Admin,Editor")] // Authentication geri açıldı
+        [HttpDelete("{id:int}")]//---> silme yaparken
+        public async Task<IActionResult> Delete(int id) => CreateActionResult(await stockcardService.DeleteAsync(id));
+
 
     }
 }

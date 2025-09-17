@@ -15,5 +15,12 @@ namespace App.API.Controllers
 
         [HttpGet] //---> istek yaparken
         public async Task<IActionResult> GetAll() => CreateActionResult(await categoryService.GetAllList());
+
+        [HttpDelete]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var result = await categoryService.DeleteAsync(id);
+            return CreateActionResult(result);
+        }
     }
 }

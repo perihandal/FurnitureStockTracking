@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using App.Repositories.Companies;
 using System.Net;
+using Microsoft.EntityFrameworkCore;
 
 namespace App.Services.CompanyServices
 {
@@ -47,7 +48,7 @@ namespace App.Services.CompanyServices
             company.IsActive = request.IsActive;
             company.TaxNumber = request.TaxNumber;
             company.Address = request.Address;
-            company.UserId= request.UserId;
+            
 
             companyRepository.Update(company);
             await unitOfWork.SaveChangesAsync();
@@ -61,13 +62,14 @@ namespace App.Services.CompanyServices
             var companies = await companyRepository.GetAllWithDetailsAsync();
 
             var companyAsDto = companies.Select(c => new CompanyDto(
+                c.Id,
                 c.Code,
                 c.Name,
                 c.TaxNumber,
                 c.Address,
                 c.Phone,
                 c.IsActive,
-                c.User.FullName,
+                c.User != null ? c.User.FullName : "N/A",
                 c.Branches.Select(b => b.Name).ToList(),
                 c.Warehouses.Select(w => w.Name).ToList()
 
@@ -75,6 +77,76 @@ namespace App.Services.CompanyServices
 
             return ServiceResult<List<CompanyDto>>.Success(companyAsDto);
         }
+
+        public async Task<ServiceResult> DeleteAsync(int id)
+        {
+            // Company'yi navigation property'leri ile birlikte al
+            var company = await companyRepository.Where(x => x.Id == id)
+                .Include(x => x.Branches)
+                .Include(x => x.StockCards)
+                    .ThenInclude(sc => sc.BarcodeCards)
+                .Include(x => x.Warehouses)
+                .Include(x => x.BarcodeCards)
+                .FirstOrDefaultAsync();
+
+            if (company == null)
+            {
+                return ServiceResult.Fail("Company not found", HttpStatusCode.NotFound);
+            }
+
+            // Company soft delete
+            company.IsActive = false;
+
+            // Branch soft delete
+            if (company.Branches != null && company.Branches.Any())
+            {
+                foreach (var branch in company.Branches)
+                {
+                    branch.IsActive = false;
+                }
+            }
+
+            // Warehouse soft delete
+            if (company.Warehouses != null && company.Warehouses.Any())
+            {
+                foreach (var warehouse in company.Warehouses)
+                {
+                    warehouse.IsActive = false;
+                }
+            }
+
+            // StockCard ve BarcodeCard soft delete
+            if (company.StockCards != null && company.StockCards.Any())
+            {
+                foreach (var stockCard in company.StockCards)
+                {
+                    stockCard.IsActive = false;
+
+                    if (stockCard.BarcodeCards != null && stockCard.BarcodeCards.Any())
+                    {
+                        foreach (var barcode in stockCard.BarcodeCards)
+                        {
+                            barcode.IsActive = false;
+                        }
+                    }
+                }
+            }
+
+            // Company BarcodeCards soft delete (direct ilişki)
+            if (company.BarcodeCards != null && company.BarcodeCards.Any())
+            {
+                foreach (var barcode in company.BarcodeCards)
+                {
+                    barcode.IsActive = false;
+                }
+            }
+
+            companyRepository.Update(company);
+            await unitOfWork.SaveChangesAsync();
+
+            return ServiceResult.Success(HttpStatusCode.NoContent);
+        }
+
 
 
 

@@ -8,6 +8,7 @@
         string Address,
         string Phone,
         bool IsActive,
+        int CompanyId,
         string CompanyName,
         string UserFullName,
         List<string> WarehouseNames,

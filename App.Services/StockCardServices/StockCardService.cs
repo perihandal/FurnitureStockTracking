@@ -1,9 +1,9 @@
-﻿using App.Repositories;
+﻿using Microsoft.EntityFrameworkCore;
+using App.Repositories;
 using App.Repositories.Categories;
 using App.Repositories.StockCards;
 using App.Repositories.BarcodeCards;
 using App.Services.BarcodeCardGeneratorService;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -157,23 +157,31 @@ namespace App.Services.StockCardServices
             await unitOfWork.SaveChangesAsync();
 
             return ServiceResult.Success(HttpStatusCode.NoContent);
+
         }
+
 
         public async Task<ServiceResult<List<StockCardDto>>> GetAllList()
         {
             var stockcards = await stockcardRepository.GetAllWithDetailsAsync();
 
             var stockcardsAsDto = stockcards.Select(sc => new StockCardDto(
+                sc.Id,
                 sc.Name,
                 sc.Code,
                 sc.Type,
                 sc.Unit,
                 sc.Tax,
                 sc.CreatedDate,
+                sc.Company.Id,
                 sc.Company?.Name ?? "Unknown Company",
+                sc.Branch.Id,
                 sc.Branch?.Name ?? "Unknown Branch",
+                sc.MainGroup.Id,
                 sc.MainGroup?.Name ?? "Unknown MainGroup",
+                sc.SubGroup.Id,
                 sc.SubGroup?.Name,
+                sc.Category.Id,
                 sc.Category?.Name,
                 sc.BarcodeCards?.Select(bc => bc.BarcodeCode).ToList() ?? new List<string>()
             )).ToList();
@@ -183,7 +191,14 @@ namespace App.Services.StockCardServices
 
         public async Task<ServiceResult<List<StockCardDto>>> GetPagedAllListAsync(int pageNumber, int pageSize)
         {
-            var stockCardsQuery = stockcardRepository.GetAll();
+            var stockCardsQuery = stockcardRepository.GetAll()
+                .Where(s => s.IsActive) // sadece aktif olanlar
+                .Include(s => s.Company)
+                .Include(s => s.Branch)
+                .Include(s => s.MainGroup)
+                .Include(s => s.SubGroup)
+                .Include(s => s.Category)
+                .Include(s => s.BarcodeCards);
 
             var stockCards = await stockCardsQuery
                 .Skip((pageNumber - 1) * pageSize)
@@ -191,21 +206,77 @@ namespace App.Services.StockCardServices
                 .ToListAsync();
 
             var stockCardAsDto = stockCards.Select(p => new StockCardDto(
+                p.Id,
                 p.Name,
                 p.Code,
                 p.Type,
                 p.Unit,
                 p.Tax,
                 p.CreatedDate,
-                p.Company.Name,
-                p.Branch.Name,
-                p.MainGroup.Name,
+                p.Company.Id,
+                p.Company?.Name ?? "N/A",
+                p.Branch.Id,
+                p.Branch?.Name ?? "N/A",
+                p.MainGroup.Id, 
+                p.MainGroup?.Name ?? "N/A",
+                p.SubGroup?.Id ?? 0,
                 p.SubGroup?.Name,
+                p.Category?.Id ?? 0,
                 p.Category?.Name,
-                p.BarcodeCards.Select(b => b.BarcodeCode).ToList()
+                p.BarcodeCards?.Select(b => b.BarcodeCode).ToList() ?? new List<string>()
             )).ToList();
 
             return ServiceResult<List<StockCardDto>>.Success(stockCardAsDto);
         }
+
+
+        public async Task<ServiceResult> DeleteAsync(int id)
+        {
+            // StockCard'ı navigation property'leri ile birlikte al
+            var stockCard = await stockcardRepository.Where(x => x.Id == id)
+                .Include(x => x.BarcodeCards)
+                .Include(x => x.PriceDefinitions)
+                .ThenInclude(pd => pd.PriceHistories) // Eğer PriceHistories navigation property varsa
+                .FirstOrDefaultAsync();
+
+            if (stockCard == null)
+            {
+                return ServiceResult.Fail("StockCard not found", HttpStatusCode.NotFound);
+            }
+
+            // StockCard soft delete
+            stockCard.IsActive = false;
+
+            //Barcode kartları soft delete
+            if (stockCard.BarcodeCards != null && stockCard.BarcodeCards.Any())
+            {
+                foreach (var barcode in stockCard.BarcodeCards)
+                {
+                    barcode.IsActive = false; 
+                }
+            }
+
+            // PriceDefinition ve PriceHistory soft delete
+            if (stockCard.PriceDefinitions != null && stockCard.PriceDefinitions.Any())
+            {
+                foreach (var pd in stockCard.PriceDefinitions)
+                {
+                    pd.IsActive = false; // PriceDefinition tablosuna IsActive eklemeyi unutma
+
+                    if (pd.PriceHistories != null && pd.PriceHistories.Any())
+                    {
+                        foreach (var ph in pd.PriceHistories)
+                        {
+                            ph.IsActive = false; // PriceHistory tablosuna IsActive eklemeyi unutma
+                        }
+                    }
+                }
+            }
+            stockcardRepository.Update(stockCard);
+            await unitOfWork.SaveChangesAsync();
+
+            return ServiceResult.Success(HttpStatusCode.NoContent);
+        }
+
     }
 }

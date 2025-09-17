@@ -12,5 +12,6 @@ namespace App.Services.BranchServices
         Task<ServiceResult<List<BranchDto>>> GetAllList();
         Task<ServiceResult> UpdateAsync(int id, UpdateBranchRequest request);
         Task<ServiceResult<CreateBranchResponse>> CreateAsync(CreateBranchRequest request);
+        Task<ServiceResult> DeleteAsync(int id);
     }
 }

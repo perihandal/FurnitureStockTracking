@@ -4,6 +4,7 @@ using App.Repositories.Warehouses;
 namespace App.Services.CompanyServices
 {
     public record class CompanyDto(
+        int Id,
         string Code,
         string Name,
         string TaxNumber,

@@ -11,6 +11,7 @@ namespace App.Services.CategoryServices
         Task<ServiceResult<CreateCategoryResponse>> CreateAsync(CreateCategoryRequest request);
         Task<ServiceResult> UpdateAsync(int id, UpdateCategoryRequest request);
         Task<ServiceResult<List<CategoryDto>>> GetAllList();
+        Task<ServiceResult> DeleteAsync(int id);
 
     }
 }
