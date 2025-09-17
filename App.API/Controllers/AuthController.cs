@@ -129,15 +129,33 @@ namespace App.API.Controllers
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
-            if (!int.TryParse(userIdClaim, out var userId))
-                return Unauthorized();
-
-            // TODO: UserService implement edilecek
-            // var result = await userService.GetProfileAsync(userId);
-            // return CreateActionResult(result);
+            // Debug için tüm claim'leri logla
+            var allClaims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+            Console.WriteLine($"Profile endpoint - All claims: {string.Join(", ", allClaims.Select(c => $"{c.Type}={c.Value}"))}");
             
-            return Ok(new { message = "Profile retrieved successfully" });
+            // JWT'de sub claim'i farklı şekillerde okunabilir, hepsini deneyelim
+            var userIdClaim = User.Claims.FirstOrDefault(c => 
+                c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub || 
+                c.Type == "sub" || 
+                c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                Console.WriteLine("Profile endpoint - Sub claim not found");
+                return Unauthorized(new { error = "Sub claim not found", allClaims = allClaims });
+            }
+            
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                Console.WriteLine($"Profile endpoint - Cannot parse userId from: {userIdClaim}");
+                return Unauthorized(new { error = "Invalid user ID" });
+            }
+
+            return Ok(new { 
+                message = "Profile retrieved successfully", 
+                userId = userId,
+                allClaims = allClaims 
+            });
         }
 
         [Microsoft.AspNetCore.Authorization.Authorize]
