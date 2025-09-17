@@ -9,7 +9,7 @@ namespace App.API.Controllers
 {
     [ApiController]
     [Route("auth")]
-    public class AuthController(IAuthService authService, ITokenService tokenService, IOptions<TokenOptions> tokenOptions, ICompanyService companyService, IUserRepository userRepository) : ControllerBase
+    public class AuthController(IAuthService authService, ITokenService tokenService, IOptions<TokenOptions> tokenOptions, ICompanyService companyService, IUserRepository userRepository, App.Services.BranchServices.IBranchService branchService) : ControllerBase
     {
         public record LoginRequest(string Username, string Password);
         public record LoginResponse(
@@ -274,7 +274,27 @@ namespace App.API.Controllers
                 return BadRequest(new { error = "Kullanıcı bulunamadı" });
             }
             
-            Console.WriteLine($"Step 2.1: Creating user info with real data");
+            Console.WriteLine($"Step 2.1: Resolving branch info");
+
+            App.Services.BranchServices.BranchDto? branchDto = null;
+            if (request.BranchId.HasValue)
+            {
+                var branchResult = await branchService.GetByIdAsync(request.BranchId.Value);
+                if (branchResult.IsSuccess && branchResult.Data != null)
+                {
+                    if (branchResult.Data.CompanyId != request.CompanyId)
+                    {
+                        return BadRequest(new { error = "Şube, seçilen şirkete ait değil" });
+                    }
+                    branchDto = branchResult.Data;
+                }
+                else
+                {
+                    return BadRequest(new { error = "Geçersiz şube ID" });
+                }
+            }
+
+            Console.WriteLine($"Step 2.2: Creating user info with real data");
             
             var userInfo = new UserInfo(
                 userEntity.Id,
@@ -283,7 +303,7 @@ namespace App.API.Controllers
                 userEntity.Email,
                 roles,
                 new CompanyInfo(selectedCompany.Id, selectedCompany.Name, selectedCompany.Code),
-                request.BranchId.HasValue ? new BranchInfo(request.BranchId.Value, $"Şube {request.BranchId.Value}", request.CompanyId) : null
+                branchDto != null ? new BranchInfo(branchDto.Id, branchDto.Name, branchDto.CompanyId) : null
             );
             
             Console.WriteLine($"UserInfo created: {userInfo.Username}, Company: {userInfo.Company?.Name}");
@@ -298,7 +318,7 @@ namespace App.API.Controllers
                 userEntity.FullName,
                 roles, 
                 request.CompanyId, 
-                request.BranchId, 
+                branchDto?.Id, 
                 opts, 
                 out var exp
             );
