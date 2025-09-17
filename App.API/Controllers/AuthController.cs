@@ -306,8 +306,12 @@ namespace App.API.Controllers
             Console.WriteLine($"Step 4: Creating refresh token");
             var rt = await authService.IssueRefreshTokenAsync(userId);
             Console.WriteLine($"Step 5: Returning response");
-
-            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, userInfo));
+            Console.WriteLine($"Response UserInfo: Id={userInfo.Id}, Username={userInfo.Username}, Company={userInfo.Company?.Name}");
+            
+            var response = new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, userInfo);
+            Console.WriteLine($"Final response created successfully");
+            
+            return Ok(response);
         }
 
         [Microsoft.AspNetCore.Authorization.Authorize]
@@ -315,6 +319,45 @@ namespace App.API.Controllers
         public IActionResult Test()
         {
             return Ok(new { message = "Test successful", isAuthenticated = User.Identity?.IsAuthenticated });
+        }
+
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        [HttpGet("test-user-info")]
+        public async Task<IActionResult> TestUserInfo()
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => 
+                c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub || 
+                c.Type == "sub" || 
+                c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { error = "Invalid user" });
+            }
+
+            var roles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+            
+            // Test company
+            var testCompany = new CompanyInfo(1, "Test Şirketi", "TEST001");
+            var testBranch = new BranchInfo(1, "Test Şube", 1);
+            
+            var userEntity = await userRepository.GetByIdAsync(userId);
+            
+            var userInfo = new UserInfo(
+                userEntity!.Id,
+                userEntity.Username,
+                userEntity.FullName,
+                userEntity.Email,
+                roles,
+                testCompany,
+                testBranch
+            );
+
+            return Ok(new { 
+                message = "Test user info", 
+                userInfo = userInfo,
+                rawUser = new { userEntity.Id, userEntity.Username, userEntity.FullName, userEntity.Email }
+            });
         }
     }
 }
