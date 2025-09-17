@@ -2,12 +2,13 @@ using App.API.Auth;
 using App.Services.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using App.Services.CompanyServices;
 
 namespace App.API.Controllers
 {
     [ApiController]
     [Route("auth")]
-    public class AuthController(IAuthService authService, ITokenService tokenService, IOptions<TokenOptions> tokenOptions) : ControllerBase
+    public class AuthController(IAuthService authService, ITokenService tokenService, IOptions<TokenOptions> tokenOptions, ICompanyService companyService) : ControllerBase
     {
         public record LoginRequest(string Username, string Password);
         public record LoginResponse(
@@ -173,12 +174,21 @@ namespace App.API.Controllers
             // Kullanıcının rolüne göre şirketleri döndür
             if (roles.Contains("Admin"))
             {
-                // Admin tüm şirketleri görebilir - şimdilik mock data
-                return Ok(new List<object>
+                // Admin tüm şirketleri görebilir
+                var companiesResult = await companyService.GetAllList();
+                if (companiesResult.IsSuccess)
                 {
-                    new { id = 1, name = "ABC Şirketi", code = "ABC001" },
-                    new { id = 2, name = "XYZ Şirketi", code = "XYZ002" }
-                });
+                    var companies = companiesResult.Data.Select(c => new { 
+                        id = c.Id, 
+                        name = c.Name, 
+                        code = c.Code 
+                    }).ToList();
+                    return Ok(companies);
+                }
+                else
+                {
+                    return BadRequest(new { error = "Şirketler yüklenemedi" });
+                }
             }
             else
             {
@@ -186,17 +196,23 @@ namespace App.API.Controllers
                 var companyIdClaim = User.FindFirst("companyId")?.Value;
                 if (!string.IsNullOrEmpty(companyIdClaim) && int.TryParse(companyIdClaim, out var companyId))
                 {
-                    // TODO: Gerçek şirket bilgisini veritabanından çek
-                    return Ok(new List<object>
+                    // Gerçek şirket bilgisini veritabanından çek
+                    var companiesResult = await companyService.GetAllList();
+                    if (companiesResult.IsSuccess)
                     {
-                        new { id = companyId, name = $"Şirket {companyId}", code = $"COMP{companyId:000}" }
-                    });
+                        var userCompany = companiesResult.Data.FirstOrDefault(c => c.Id == companyId);
+                        if (userCompany != null)
+                        {
+                            return Ok(new List<object>
+                            {
+                                new { id = userCompany.Id, name = userCompany.Name, code = userCompany.Code }
+                            });
+                        }
+                    }
                 }
-                else
-                {
-                    // Hiçbir şirkete atanmamış
-                    return Ok(new List<object>());
-                }
+                
+                // Hiçbir şirkete atanmamış veya şirket bulunamadı
+                return Ok(new List<object>());
             }
         }
 
@@ -227,14 +243,26 @@ namespace App.API.Controllers
             // 2. Kullanıcının CompanyId ve BranchId'sini güncelle
             // 3. Yeni JWT token oluştur ve döndür
 
-            // Şimdilik mock response döndürelim
-            var mockUser = new UserInfo(
+            // Gerçek şirket bilgisini veritabanından çek
+            var companiesResult = await companyService.GetAllList();
+            if (!companiesResult.IsSuccess)
+            {
+                return BadRequest(new { error = "Şirket bilgisi alınamadı" });
+            }
+
+            var selectedCompany = companiesResult.Data.FirstOrDefault(c => c.Id == request.CompanyId);
+            if (selectedCompany == null)
+            {
+                return BadRequest(new { error = "Geçersiz şirket ID" });
+            }
+
+            var userInfo = new UserInfo(
                 userId,
                 User.FindFirst("unique_name")?.Value ?? "user",
                 User.FindFirst("name")?.Value ?? "User Name",
-                "user@example.com",
+                "user@example.com", // TODO: Gerçek email'i user'dan çek
                 roles,
-                new CompanyInfo(request.CompanyId, $"Şirket {request.CompanyId}", $"COMP{request.CompanyId:000}"),
+                new CompanyInfo(selectedCompany.Id, selectedCompany.Name, selectedCompany.Code),
                 request.BranchId.HasValue ? new BranchInfo(request.BranchId.Value, $"Şube {request.BranchId.Value}", request.CompanyId) : null
             );
 
@@ -253,7 +281,7 @@ namespace App.API.Controllers
             
             var rt = await authService.IssueRefreshTokenAsync(userId);
 
-            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, mockUser));
+            return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, userInfo));
         }
 
         [Microsoft.AspNetCore.Authorization.Authorize]
