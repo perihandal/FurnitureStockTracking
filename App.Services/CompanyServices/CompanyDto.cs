@@ -11,6 +11,7 @@ namespace App.Services.CompanyServices
         string Address,
         string Phone,
         bool IsActive,
+       // int UserId,
         string UserName,
         List<string> BranchNames,
         List<string> WarehouseNames

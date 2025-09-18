@@ -78,6 +78,22 @@ namespace App.Services.CompanyServices
             return ServiceResult<List<CompanyDto>>.Success(companyAsDto);
         }
 
+        public async Task<ServiceResult<int>> GetCompanyIdByUserIdAsync(int userId)
+        {
+            var companyId = await companyRepository
+                .Where(c => c.UserId == userId && c.IsActive)
+                .Select(c => c.Id)
+                .FirstOrDefaultAsync();
+
+            if (companyId == 0)
+            {
+                return ServiceResult<int>.Fail("Company not found", HttpStatusCode.NotFound);
+            }
+
+            return ServiceResult<int>.Success(companyId);
+        }
+
+
         public async Task<ServiceResult> DeleteAsync(int id)
         {
             // Company'yi navigation property'leri ile birlikte al

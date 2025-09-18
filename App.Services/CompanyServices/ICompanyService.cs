@@ -13,5 +13,7 @@ namespace App.Services.CompanyServices
         Task<ServiceResult<List<CompanyDto>>> GetAllList();
         Task<ServiceResult> DeleteAsync(int id);
 
+        Task<ServiceResult<int>> GetCompanyIdByUserIdAsync(int userId);
+
     }
 }

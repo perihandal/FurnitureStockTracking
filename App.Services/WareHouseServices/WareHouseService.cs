@@ -72,7 +72,9 @@ namespace App.Services.WareHouseServices
             c.BranchId,
             c.Branch.Name,
             c.CompanyId,
-            c.Company.Name
+            c.Company.Name,
+            c.User.Id,
+            c.User.FullName ?? "N/A"
             )).ToList();
 
             return ServiceResult<List<WareHouseDto>>.Success(warehouseAsDto);

@@ -16,7 +16,7 @@ namespace App.Repositories.Warehouses
             return await context.Warehouses
                 .Include(w => w.Company)
                 .Include(w => w.Branch)
-                //.Include(w => w.CreateUser)
+                .Include(w => w.User)
                 .ToListAsync();
         }
 
