@@ -26,6 +26,8 @@ namespace App.Services.ServiceExtensions
     {
         public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
         {
+            // HttpContextAccessor'ı ekle (BaseService için gerekli)
+            services.AddHttpContextAccessor();
 
             services.AddScoped<IStockCardService, StockCardService>();
             services.AddScoped<ICategoryService, CategoryService>();

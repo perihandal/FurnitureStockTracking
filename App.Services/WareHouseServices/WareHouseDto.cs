@@ -13,7 +13,9 @@ namespace App.Services.WareHouseServices
         int BranchId,
         string BranchName,
         int CompanyId,
-        string CompanyName            // Şirket adı
+        string CompanyName,            // Şirket adı
+        int UserId,
+        string UserFullName
     );
 
 

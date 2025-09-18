@@ -7,7 +7,7 @@ using App.API.Auth;
 
 namespace App.API.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Editor,User")]
     public class CompanyController(ICompanyService companyService) : CustomBaseController
     {
         [RoleAuthorize("Admin")] // Sadece Admin şirket oluşturabilir

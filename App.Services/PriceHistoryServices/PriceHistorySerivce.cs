@@ -4,13 +4,14 @@ using App.Services.PriceDefinitionServices;
 using App.Services;
 using System.Net;
 using App.Repositories.StockCards;
+using Microsoft.AspNetCore.Http;
 
-public class PriceHistoryService : IPriceHistoryService
+public class PriceHistoryService : BaseService, IPriceHistoryService
 {
     private readonly IPriceHistoryRepository pricehistoryRepository;
     private readonly IUnitOfWork unitOfWork;
 
-    public PriceHistoryService(IPriceHistoryRepository pricehistoryRepository, IUnitOfWork unitOfWork)
+    public PriceHistoryService(IPriceHistoryRepository pricehistoryRepository, IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
     {
         this.pricehistoryRepository = pricehistoryRepository;
         this.unitOfWork = unitOfWork;
@@ -19,6 +20,17 @@ public class PriceHistoryService : IPriceHistoryService
     public async Task<ServiceResult<List<PriceHistoryDto>>> GetAllListAsync()
     {
         var priceHistory = await pricehistoryRepository.GetAllWithDetailsAsync();
+
+        // Editor ve User sadece kendi company ve branch'larındaki fiyat geçmişini görebilir
+        if (IsEditor() || IsUser())
+        {
+            var userCompanyId = GetUserCompanyId();
+            var userBranchId = GetUserBranchId();
+
+            priceHistory = priceHistory.Where(ph => 
+                ph.PriceDefinition.StockCard.CompanyId == userCompanyId && 
+                ph.PriceDefinition.StockCard.BranchId == userBranchId).ToList();
+        }
 
         var priceHistoriesAsDto = priceHistory.Select(ph => new PriceHistoryDto
         {
@@ -38,6 +50,16 @@ public class PriceHistoryService : IPriceHistoryService
 
         if (priceHistory == null)
             return ServiceResult<PriceHistoryDto?>.Fail("Price history not found", HttpStatusCode.NotFound);
+
+        // Editor ve User sadece kendi company ve branch'larındaki fiyat geçmişini görebilir
+        if (IsEditor() || IsUser())
+        {
+            var accessCheck = ValidateEntityAccess(priceHistory.PriceDefinition.StockCard.CompanyId, priceHistory.PriceDefinition.StockCard.BranchId);
+            if (!accessCheck.IsSuccess)
+            {
+                return ServiceResult<PriceHistoryDto?>.Fail("Access denied", HttpStatusCode.Forbidden);
+            }
+        }
 
         var priceHistoryAsDto = new PriceHistoryDto
         {

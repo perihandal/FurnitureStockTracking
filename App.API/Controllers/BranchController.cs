@@ -1,17 +1,22 @@
-﻿using App.Services.BranchServices;
+﻿using App.API.Auth;
+using App.Services.BranchServices;
 using App.Services.CategoryServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace App.API.Controllers
 {
-  
+    [CompanyAuthorize]
+    [Authorize(Roles = "Admin,Editor,User")]
     public class BranchController(IBranchService _branchService) : CustomBaseController
     {
         [HttpPost] // Yeni şube oluşturmak için
+        [Authorize(Roles = "Admin,Editor")]
         public async Task<IActionResult> Create(CreateBranchRequest request)
             => CreateActionResult(await _branchService.CreateAsync(request));
 
         [HttpPut] // Şube güncelleme
+        [Authorize(Roles = "Admin,Editor")]
         public async Task<IActionResult> Update(int id, UpdateBranchRequest request)
             => CreateActionResult(await _branchService.UpdateAsync(id, request));
 
@@ -24,6 +29,7 @@ namespace App.API.Controllers
             => CreateActionResult(await _branchService.GetByIdAsync(id));
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,Editor")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _branchService.DeleteAsync(id);

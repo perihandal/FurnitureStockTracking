@@ -5,15 +5,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace App.Services.MainGroupServices
 {
-    public class MainGroupService : IMainGroupService
+    public class MainGroupService : BaseService, IMainGroupService
     {
         private readonly IMainGroupRepository mainGroupRepository;
         private readonly IUnitOfWork unitOfWork;
 
-        public MainGroupService(IMainGroupRepository mainGroupRepository, IUnitOfWork unitOfWork)
+        public MainGroupService(IMainGroupRepository mainGroupRepository, IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
         {
             this.mainGroupRepository = mainGroupRepository;
             this.unitOfWork = unitOfWork;
@@ -22,6 +23,10 @@ namespace App.Services.MainGroupServices
         public async Task<ServiceResult<List<MainGroupDto>>> GetAllListAsync()
         {
             var mainGroups = await mainGroupRepository.GetAllWithDetailsAsync();
+
+            // Admin tüm ana grupları görebilir
+            // Editor ve User filtreleme yapmıyoruz çünkü MainGroup'ta CompanyId alanı yok
+            // Gerekirse UserId ile filtreleme yapılabilir
 
             var mainGroupsAsDto = mainGroups.Select(mg => new MainGroupDto
             {
@@ -64,6 +69,12 @@ namespace App.Services.MainGroupServices
 
         public async Task<ServiceResult<CreateMainGroupResponse>> CreateAsync(CreateMainGroupRequest request)
         {
+            // User yetkisi oluşturma işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult<CreateMainGroupResponse>.Fail("User role cannot create main groups", HttpStatusCode.Forbidden);
+            }
+
             var mainGroup = new MainGroup
             {
                 Code = request.Code,
@@ -80,6 +91,12 @@ namespace App.Services.MainGroupServices
 
         public async Task<ServiceResult> UpdateAsync(int id, UpdateMainGroupRequest request)
         {
+            // User yetkisi güncelleme işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult.Fail("User role cannot update main groups", HttpStatusCode.Forbidden);
+            }
+
             var mainGroup = await mainGroupRepository.GetByIdAsync(id);
 
             if (mainGroup == null)

@@ -1,13 +1,14 @@
 ﻿using App.Services;
 using System.Net;
+using Microsoft.AspNetCore.Http;
 
 namespace App.Services.WareHouseStockServices
 {
-    public class WarehouseStockService : IWarehouseStockService
+    public class WarehouseStockService : BaseService, IWarehouseStockService
     {
         private readonly IWarehouseStockRepository _warehouseStockRepository;
 
-        public WarehouseStockService(IWarehouseStockRepository warehouseStockRepository)
+        public WarehouseStockService(IWarehouseStockRepository warehouseStockRepository, IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
         {
             _warehouseStockRepository = warehouseStockRepository;
         }

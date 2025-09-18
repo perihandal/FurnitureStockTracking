@@ -8,14 +8,30 @@ using System.Text;
 using System.Threading.Tasks;
 using App.Repositories.Companies;
 using System.Net;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace App.Services.CompanyServices
 {
-    public class CompanyService(ICompanyRepository companyRepository, IUnitOfWork unitOfWork) : ICompanyService
+    public class CompanyService : BaseService, ICompanyService
     {
+        private readonly ICompanyRepository companyRepository;
+        private readonly IUnitOfWork unitOfWork;
+
+        public CompanyService(ICompanyRepository companyRepository, IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor) 
+            : base(httpContextAccessor)
+        {
+            this.companyRepository = companyRepository;
+            this.unitOfWork = unitOfWork;
+        }
         public async Task<ServiceResult<CreateCompanyResponse>> CreateAsync(CreateCompanyRequest request)
         {
+            // Sadece Admin company oluşturabilir
+            if (!IsAdmin())
+            {
+                return ServiceResult<CreateCompanyResponse>.Fail("Only Admin can create companies", HttpStatusCode.Forbidden);
+            }
+
             var company = new Company()
             {
                 Code = request.Code,
@@ -36,12 +52,29 @@ namespace App.Services.CompanyServices
 
         public async Task<ServiceResult> UpdateAsync(int id, UpdateCompanyRequest request)
         {
+            // Editor sadece kendi company'sini güncelleyebilir, User hiçbirini güncelleyemez
+            if (IsUser())
+            {
+                return ServiceResult.Fail("User role cannot update companies", HttpStatusCode.Forbidden);
+            }
+
             var company = await companyRepository.GetByIdAsync(id);
 
             if (company == null)
             {
-                return ServiceResult.Fail("Product not found", HttpStatusCode.NotFound);
+                return ServiceResult.Fail("Company not found", HttpStatusCode.NotFound);
             }
+
+            // Editor sadece kendi company'sini güncelleyebilir
+            if (IsEditor())
+            {
+                var userCompanyId = GetUserCompanyId();
+                if (company.Id != userCompanyId)
+                {
+                    return ServiceResult.Fail("Editor can only update their own company", HttpStatusCode.Forbidden);
+                }
+            }
+
             company.Code = request.Code;
             company.Name = request.Name;
             company.Phone = request.Phone;
@@ -60,6 +93,13 @@ namespace App.Services.CompanyServices
         public async Task<ServiceResult<List<CompanyDto>>> GetAllList()
         {
             var companies = await companyRepository.GetAllWithDetailsAsync();
+
+            // Editor ve User sadece kendi company'lerini görebilir
+            if (IsEditor() || IsUser())
+            {
+                var userCompanyId = GetUserCompanyId();
+                companies = companies.Where(c => c.Id == userCompanyId).ToList();
+            }
 
             var companyAsDto = companies.Select(c => new CompanyDto(
                 c.Id,

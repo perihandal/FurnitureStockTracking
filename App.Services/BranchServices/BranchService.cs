@@ -10,15 +10,16 @@ using System.Threading.Tasks;
 using App.Repositories;
 using App.Services.StockCardServices;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 
 namespace App.Services.BranchServices
 {
-    public class BranchService : IBranchService
+    public class BranchService : BaseService, IBranchService
     {
         private readonly IBranchRepository _branchRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public BranchService(IBranchRepository branchRepository, IUnitOfWork unitOfWork)
+        public BranchService(IBranchRepository branchRepository, IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
         {
             _branchRepository = branchRepository;
             _unitOfWork = unitOfWork;
@@ -26,6 +27,22 @@ namespace App.Services.BranchServices
 
         public async Task<ServiceResult<CreateBranchResponse>> CreateAsync(CreateBranchRequest request)
         {
+            // User yetkisi oluşturma işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult<CreateBranchResponse>.Fail("User role cannot create branches", HttpStatusCode.Forbidden);
+            }
+
+            // Editor sadece kendi company'sinde branch oluşturabilir
+            if (IsEditor())
+            {
+                var userCompanyId = GetUserCompanyId();
+                if (request.CompanyId != userCompanyId)
+                {
+                    return ServiceResult<CreateBranchResponse>.Fail("Editor can only create branches in their own company", HttpStatusCode.Forbidden);
+                }
+            }
+
             var branch = new Branch()
             {
                 Code = request.Code,              // Şube kodu
@@ -45,11 +62,27 @@ namespace App.Services.BranchServices
 
         public async Task<ServiceResult> UpdateAsync(int id, UpdateBranchRequest request)
         {
+            // User yetkisi güncelleme işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult.Fail("User role cannot update branches", HttpStatusCode.Forbidden);
+            }
+
             var branch = await _branchRepository.GetByIdAsync(id);
 
             if (branch == null)
             {
                 return ServiceResult.Fail("Branch not found", HttpStatusCode.NotFound);
+            }
+
+            // Editor sadece kendi company'sindeki branch'ları güncelleyebilir
+            if (IsEditor())
+            {
+                var accessCheck = ValidateEntityAccess(branch.CompanyId, null);
+                if (!accessCheck.IsSuccess)
+                {
+                    return accessCheck;
+                }
             }
 
             branch.Code = request.Code;
@@ -70,6 +103,13 @@ namespace App.Services.BranchServices
         {
             var branches = await _branchRepository.GetAllWithDetailsAsync();
 
+            // Editor ve User sadece kendi company'lerindeki branch'ları görebilir
+            if (IsEditor() || IsUser())
+            {
+                var userCompanyId = GetUserCompanyId();
+                branches = branches.Where(b => b.CompanyId == userCompanyId).ToList();
+            }
+
             var branchDtos = branches.Select(b => new BranchDto(
                 b.Id,                             // ID'yi ekledim
                 b.Code,
@@ -79,7 +119,7 @@ namespace App.Services.BranchServices
                 b.IsActive,
                 b.Company.Id,
                 b.Company.Name,
-                b.User.FullName,
+                b.User?.FullName ?? "Unknown User",
                 b.Warehouses.Select(w => w.Name).ToList(), // Depo isimlerini liste olarak alıyorum
                 b.StockCards.Select(s => s.Code).ToList()  // Stok kartlarını liste olarak alıyorum
             )).ToList();
@@ -112,13 +152,23 @@ namespace App.Services.BranchServices
         //    return ServiceResult<BranchDto>.Success((BranchDto)branchDto);
         //}
 
-        public async Task<ServiceResult<BranchDto?>> GetByIdAsync(int id)
+        public async Task<ServiceResult<BranchDto>> GetByIdAsync(int id)
         {
             var branch = await _branchRepository.GetByIdAsync(id);
 
             if (branch == null)
             {
-                ServiceResult<StockCardDto>.Fail(errorMessage: "Product not found", HttpStatusCode.NotFound);
+                return ServiceResult<BranchDto>.Fail("Branch not found", HttpStatusCode.NotFound);
+            }
+
+            // Editor ve User sadece kendi company'lerindeki branch'ları görebilir
+            if (IsEditor() || IsUser())
+            {
+                var accessCheck = ValidateEntityAccess(branch.CompanyId, null);
+                if (!accessCheck.IsSuccess)
+                {
+                    return ServiceResult<BranchDto>.Fail("Access denied", HttpStatusCode.Forbidden);
+                }
             }
 
             var branchAsDto = new BranchDto(
@@ -128,14 +178,14 @@ namespace App.Services.BranchServices
                 branch.Address,
                 branch.Phone,
                 branch.IsActive,
-                branch.Company.Id,
-                branch.Company.Name,
-                branch.User.FullName,
-                branch.Warehouses.Select(w => w.Name).ToList(), // Depo isimlerini liste olarak alıyorum
-                branch.StockCards.Select(s => s.Code).ToList()  // Stok kartlarını liste olarak alıyorum
+                branch.Company?.Id ?? 0,
+                branch.Company?.Name ?? "Unknown Company",
+                branch.User?.FullName ?? "Unknown User",
+                branch.Warehouses?.Select(w => w.Name).ToList() ?? new List<string>(), // Depo isimlerini liste olarak alıyorum
+                branch.StockCards?.Select(s => s.Code).ToList() ?? new List<string>()  // Stok kartlarını liste olarak alıyorum
              );
 
-            return ServiceResult<BranchDto>.Success((BranchDto)branchAsDto)!;
+            return ServiceResult<BranchDto>.Success(branchAsDto);
 
         }
 

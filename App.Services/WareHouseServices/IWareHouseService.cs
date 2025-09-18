@@ -12,5 +12,6 @@ namespace App.Services.WareHouseServices
         Task<ServiceResult<CreateWareHouseResponse>> CreateAsync(CreateWareHouseRequest request);
         Task<ServiceResult> UpdateAsync(int id, UpdateWareHouseRequest request);
         Task<ServiceResult<List<WareHouseDto>>> GetAllList();
+        Task<ServiceResult> DeleteAsync(int id);
     }
 }

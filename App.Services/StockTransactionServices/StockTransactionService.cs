@@ -7,7 +7,9 @@ using App.Repositories;
 using App.Repositories.WarehouseStocks;
 using App.Services;
 using App.Services.StockTransactionServices;
-public class StockTransactionService : IStockTransactionService
+using Microsoft.AspNetCore.Http;
+
+public class StockTransactionService : BaseService, IStockTransactionService
 {
     private readonly IStockTransactionRepository _stockTransactionRepository;
     private readonly IWarehouseStockRepository _warehouseStockRepository;
@@ -16,7 +18,8 @@ public class StockTransactionService : IStockTransactionService
     public StockTransactionService(
         IStockTransactionRepository stockTransactionRepository,
         IWarehouseStockRepository warehouseStockRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
     {
         _stockTransactionRepository = stockTransactionRepository;
         _warehouseStockRepository = warehouseStockRepository;
@@ -26,6 +29,10 @@ public class StockTransactionService : IStockTransactionService
     public async Task<ServiceResult<List<StockTransactionDto>>> GetAllAsync()
     {
         var transactions = await _stockTransactionRepository.GetAllWithDetailsAsync();
+        
+        // StockTransaction entity'sinde CompanyId/BranchId alanları olmadığı için filtreleme yapmıyoruz
+        // Gerekirse navigation property'ler üzerinden filtreleme yapılabilir
+        
         var dtos = transactions.Select(MapToDto).ToList();
         return ServiceResult<List<StockTransactionDto>>.Success(dtos);
     }
@@ -42,6 +49,12 @@ public class StockTransactionService : IStockTransactionService
 
     public async Task<ServiceResult<CreateStockTransactionResponse>> CreateAsync(CreateStockTransactionRequest request)
     {
+        // User yetkisi oluşturma işlemi yapamaz
+        if (IsUser())
+        {
+            return ServiceResult<CreateStockTransactionResponse>.Fail("User role cannot create stock transactions", HttpStatusCode.Forbidden);
+        }
+
         // 1. Validation
         var validationResult = ValidateTransactionRequest(request);
         if (!validationResult.IsSuccess)

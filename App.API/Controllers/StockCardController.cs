@@ -6,7 +6,7 @@ using App.API.Auth;
 
 namespace App.API.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Editor,User")]
     [CompanyAuthorize] // Tüm işlemler şirket bazlı
     public class StockCardController(IStockCardService stockcardService) : CustomBaseController
     {

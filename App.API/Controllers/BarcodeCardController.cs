@@ -6,7 +6,7 @@ using App.API.Auth;
 
 namespace App.API.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Editor,User")]
     [CompanyAuthorize] // Şirket bazlı filtreleme
     public class BarcodeCardController(IBarcodeCardService barcodeCardService) : CustomBaseController
     {

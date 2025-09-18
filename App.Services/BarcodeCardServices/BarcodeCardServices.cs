@@ -9,10 +9,11 @@ using System.Threading.Tasks;
 using System.Text;
 using App.Services.BarcodeCardGeneratorService;
 using App.Services.BarcodeCardValidationService;
+using Microsoft.AspNetCore.Http;
 
 namespace App.Services.BarcodeCardServices
 {
-    public class BarcodeCardService : IBarcodeCardService
+    public class BarcodeCardService : BaseService, IBarcodeCardService
     {
         private readonly IBarcodeCardRepository barcodeCardRepository;
         private readonly IStockCardRepository stockCardRepository;
@@ -25,7 +26,8 @@ namespace App.Services.BarcodeCardServices
             IStockCardRepository stockCardRepository,
             IBarcodeGeneratorService barcodeGeneratorService,
             IBarcodeValidationService barcodeValidationService,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
         {
             this.barcodeCardRepository = barcodeCardRepository;
             this.stockCardRepository = stockCardRepository;
@@ -104,11 +106,27 @@ namespace App.Services.BarcodeCardServices
 
         public async Task<ServiceResult<CreateBarcodeCardResponse>> CreateAsync(CreateBarcodeCardRequest request)
         {
+            // User yetkisi oluşturma işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult<CreateBarcodeCardResponse>.Fail("User role cannot create barcode cards", HttpStatusCode.Forbidden);
+            }
+
             // Stok kartının var olup olmadığını kontrol et
             var stockCard = await stockCardRepository.GetByIdAsync(request.StockCardId);
             if (stockCard == null)
             {
                 return ServiceResult<CreateBarcodeCardResponse>.Fail("Stock card not found", HttpStatusCode.NotFound);
+            }
+
+            // Editor sadece kendi company ve branch'ındaki stok kartları için barkod oluşturabilir
+            if (IsEditor())
+            {
+                var accessCheck = ValidateEntityAccess(stockCard.CompanyId, stockCard.BranchId);
+                if (!accessCheck.IsSuccess)
+                {
+                    return ServiceResult<CreateBarcodeCardResponse>.Fail("Access denied", HttpStatusCode.Forbidden);
+                }
             }
 
             // Eğer bu varsayılan barkod olarak işaretleniyorsa, diğerlerini varsayılan olmaktan çıkar
@@ -145,11 +163,27 @@ namespace App.Services.BarcodeCardServices
 
         public async Task<ServiceResult> UpdateAsync(int id, UpdateBarcodeCardRequest request)
         {
+            // User yetkisi güncelleme işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult.Fail("User role cannot update barcode cards", HttpStatusCode.Forbidden);
+            }
+
             var barcodeCard = await barcodeCardRepository.GetByIdAsync(id);
 
             if (barcodeCard == null)
             {
                 return ServiceResult.Fail("Barcode card not found", HttpStatusCode.NotFound);
+            }
+
+            // Editor sadece kendi company ve branch'ındaki barkod kartları güncelleyebilir
+            if (IsEditor())
+            {
+                var accessCheck = ValidateEntityAccess(barcodeCard.CompanyId, barcodeCard.BranchId);
+                if (!accessCheck.IsSuccess)
+                {
+                    return ServiceResult.Fail("Access denied", HttpStatusCode.Forbidden);
+                }
             }
 
             // Eğer bu varsayılan barkod olarak işaretleniyorsa, diğerlerini varsayılan olmaktan çıkar

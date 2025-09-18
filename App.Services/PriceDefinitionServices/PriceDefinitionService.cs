@@ -6,10 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace App.Services.PriceDefinitionServices
 {
-    public class PriceDefinitionService : IPriceDefinitionService
+    public class PriceDefinitionService : BaseService, IPriceDefinitionService
     {
         private readonly IPriceDefinitionRepository _priceDefinitionRepository;
         private readonly IPriceHistoryRepository _priceHistoryRepository;
@@ -18,7 +19,8 @@ namespace App.Services.PriceDefinitionServices
         public PriceDefinitionService(
             IPriceDefinitionRepository priceDefinitionRepository,
             IPriceHistoryRepository priceHistoryRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
         {
             _priceDefinitionRepository = priceDefinitionRepository;
             _priceHistoryRepository = priceHistoryRepository;
@@ -28,6 +30,17 @@ namespace App.Services.PriceDefinitionServices
         public async Task<ServiceResult<List<PriceDefinitionDto>>> GetAllListAsync()
         {
             var priceDefinitions = await _priceDefinitionRepository.GetAllWithDetailsAsync();
+
+            // Editor ve User sadece kendi company ve branch'larındaki fiyat tanımlarını görebilir
+            if (IsEditor() || IsUser())
+            {
+                var userCompanyId = GetUserCompanyId();
+                var userBranchId = GetUserBranchId();
+
+                priceDefinitions = priceDefinitions.Where(pd => 
+                    pd.StockCard.CompanyId == userCompanyId && 
+                    pd.StockCard.BranchId == userBranchId).ToList();
+            }
 
             var priceDefinitionsAsDto = priceDefinitions.Select(pd => new PriceDefinitionDto
             {
@@ -40,8 +53,8 @@ namespace App.Services.PriceDefinitionServices
                 IsActive = pd.ValidTo == null || pd.ValidTo > DateTime.UtcNow,
                 StockCardId = pd.StockCard.Id,
                 StockCardName = pd.StockCard.Name,
-                UserId = pd.User.Id,
-                UserFullName = pd.User.FullName
+                UserId = pd.User?.Id ?? 0,
+                UserFullName = pd.User?.FullName ?? "Unknown User"
             }).ToList();
 
             return ServiceResult<List<PriceDefinitionDto>>.Success(priceDefinitionsAsDto);
@@ -56,6 +69,16 @@ namespace App.Services.PriceDefinitionServices
                 return ServiceResult<PriceDefinitionDto?>.Fail("Price definition not found", HttpStatusCode.NotFound);
             }
 
+            // Editor ve User sadece kendi company ve branch'larındaki fiyat tanımlarını görebilir
+            if (IsEditor() || IsUser())
+            {
+                var accessCheck = ValidateEntityAccess(priceDefinition.StockCard.CompanyId, priceDefinition.StockCard.BranchId);
+                if (!accessCheck.IsSuccess)
+                {
+                    return ServiceResult<PriceDefinitionDto?>.Fail("Access denied", HttpStatusCode.Forbidden);
+                }
+            }
+
             var priceDefinitionAsDto = new PriceDefinitionDto
             {
                 Id = priceDefinition.Id,
@@ -67,8 +90,8 @@ namespace App.Services.PriceDefinitionServices
                 IsActive = priceDefinition.ValidTo == null || priceDefinition.ValidTo > DateTime.UtcNow,
                 StockCardId = priceDefinition.StockCard.Id,
                 StockCardName = priceDefinition.StockCard.Name,
-                UserId = priceDefinition.User.Id,
-                UserFullName = priceDefinition.User.FullName
+                UserId = priceDefinition.User?.Id ?? 0,
+                UserFullName = priceDefinition.User?.FullName ?? "Unknown User"
             };
 
             return ServiceResult<PriceDefinitionDto?>.Success(priceDefinitionAsDto);
@@ -76,6 +99,12 @@ namespace App.Services.PriceDefinitionServices
 
         public async Task<ServiceResult<CreatePriceDefinitionResponse>> CreateAsync(CreatePriceDefinitionRequest request)
         {
+            // User yetkisi oluşturma işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult<CreatePriceDefinitionResponse>.Fail("User role cannot create price definitions", HttpStatusCode.Forbidden);
+            }
+
             var priceDefinition = new PriceDefinition
             {
                 PriceType = request.PriceType,
@@ -97,6 +126,12 @@ namespace App.Services.PriceDefinitionServices
 
         public async Task<ServiceResult> UpdateAsync(int id, UpdatePriceDefinitionRequest request)
         {
+            // User yetkisi güncelleme işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult.Fail("User role cannot update price definitions", HttpStatusCode.Forbidden);
+            }
+
             var priceDefinition = await _priceDefinitionRepository.GetByIdAsync(id);
 
             if (priceDefinition == null)

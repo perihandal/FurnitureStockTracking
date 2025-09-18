@@ -9,6 +9,6 @@ namespace App.Repositories.Branches
     public interface IBranchRepository : IGenericRepository<Branch>
     {
         Task<List<Branch>> GetAllWithDetailsAsync();
-   
+        new Task<Branch?> GetByIdAsync(int id);
     }
 }

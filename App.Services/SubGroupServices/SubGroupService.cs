@@ -5,15 +5,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace App.Services.SubGroupServices
 {
-    public class SubGroupService : ISubGroupService
+    public class SubGroupService : BaseService, ISubGroupService
     {
         private readonly ISubGroupRepository subGroupRepository;
         private readonly IUnitOfWork unitOfWork;
 
-        public SubGroupService(ISubGroupRepository subGroupRepository, IUnitOfWork unitOfWork)
+        public SubGroupService(ISubGroupRepository subGroupRepository, IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
         {
             this.subGroupRepository = subGroupRepository;
             this.unitOfWork = unitOfWork;
@@ -29,8 +30,8 @@ namespace App.Services.SubGroupServices
                 sg.Code,                                 // Code
                 sg.Name,                                 // Name
                 sg.IsActive,                             // IsActive
-                sg.User.Id,                               // UserId
-                sg.MainGroup.Id                  // MainGroupId
+                sg.User?.Id ?? 0,                        // UserId
+                sg.MainGroup?.Id ?? 0                    // MainGroupId
                 //sg.StockCards.Select(sc => sc.Name).ToList() // StockCards isimlerini liste olarak al
             )).ToList();
 
@@ -62,6 +63,12 @@ namespace App.Services.SubGroupServices
         
         public async Task<ServiceResult<CreateSubGroupResponse>> CreateAsync(CreateSubGroupRequest request)
         {
+            // User yetkisi oluşturma işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult<CreateSubGroupResponse>.Fail("User role cannot create sub groups", HttpStatusCode.Forbidden);
+            }
+
             var subGroup = new SubGroup
             {
                 Code = request.Code,
@@ -79,6 +86,12 @@ namespace App.Services.SubGroupServices
 
         public async Task<ServiceResult> UpdateAsync(int id, UpdateSubGroupRequest request)
         {
+            // User yetkisi güncelleme işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult.Fail("User role cannot update sub groups", HttpStatusCode.Forbidden);
+            }
+
             var subGroup = await subGroupRepository.GetByIdAsync(id);
 
             if (subGroup == null)

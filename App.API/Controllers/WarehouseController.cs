@@ -7,7 +7,7 @@ using App.API.Auth;
 
 namespace App.API.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Editor,User")]
     [WarehouseAuthorize] // Depo bazlı yetkilendirme
     public class WarehouseController(IWareHouseService wareHouseService) : CustomBaseController
     {

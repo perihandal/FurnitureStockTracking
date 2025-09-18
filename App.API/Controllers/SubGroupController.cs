@@ -1,9 +1,13 @@
-﻿using App.Services.SubGroupServices;
+﻿using App.API.Auth;
+using App.Services.SubGroupServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace App.API.Controllers
 {
+    [CompanyAuthorize]
+    [Authorize(Roles = "Admin,Editor,User")]
     public class SubGroupController : CustomBaseController
     {
         private readonly ISubGroupService subGroupService;
@@ -29,16 +33,19 @@ namespace App.API.Controllers
 
         // Yeni SubGroup oluşturma
         [HttpPost]
+        [Authorize(Roles = "Admin,Editor")]
         public async Task<IActionResult> Create(CreateSubGroupRequest request)
             => CreateActionResult(await subGroupService.CreateAsync(request));
 
         // Mevcut SubGroup güncelleme
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,Editor")]
         public async Task<IActionResult> Update(int id, UpdateSubGroupRequest request)
             => CreateActionResult(await subGroupService.UpdateAsync(id, request));
 
         // SubGroup silme
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,Editor")]
         public async Task<IActionResult> Delete(int id)
             => CreateActionResult(await subGroupService.DeleteAsync(id));
     }

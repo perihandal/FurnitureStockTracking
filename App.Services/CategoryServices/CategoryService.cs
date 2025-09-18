@@ -1,14 +1,37 @@
 ﻿using App.Repositories;
 using App.Repositories.Categories;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 
 namespace App.Services.CategoryServices
 {
-    public class CategoryService(ICategoryRepository categoryRepository, IUnitOfWork unitOfWork) : ICategoryService
+    public class CategoryService : BaseService, ICategoryService
     {
+        private readonly ICategoryRepository categoryRepository;
+        private readonly IUnitOfWork unitOfWork;
+
+        public CategoryService(ICategoryRepository categoryRepository, IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor) 
+            : base(httpContextAccessor)
+        {
+            this.categoryRepository = categoryRepository;
+            this.unitOfWork = unitOfWork;
+        }
         public async Task<ServiceResult<CreateCategoryResponse>> CreateAsync(CreateCategoryRequest request)
         {
+            // User rolü create işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult<CreateCategoryResponse>.Fail("Kategori oluşturma yetkiniz bulunmamaktadır.", HttpStatusCode.Forbidden);
+            }
+
+            // CompanyId ve BranchId doğrulaması
+            var accessValidation = ValidateEntityAccess(request.CompanyId, request.BranchId);
+            if (!accessValidation.IsSuccess)
+            {
+                return ServiceResult<CreateCategoryResponse>.Fail(accessValidation.ErrorMessage!, accessValidation.Status);
+            }
+
             var category = new Category()
             {
                 Name = request.Name,
@@ -23,7 +46,6 @@ namespace App.Services.CategoryServices
             };
 
             await categoryRepository.AddAsync(category);
-
             await unitOfWork.SaveChangesAsync();
 
             return ServiceResult<CreateCategoryResponse>.Success(new CreateCategoryResponse(category.Id));
@@ -31,12 +53,31 @@ namespace App.Services.CategoryServices
 
         public async Task<ServiceResult> UpdateAsync(int id, UpdateCategoryRequest request)
         {
-            var category = await categoryRepository.GetByIdAsync(id);
+            // User rolü update işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult.Fail("Kategori güncelleme yetkiniz bulunmamaktadır.", HttpStatusCode.Forbidden);
+            }
 
+            var category = await categoryRepository.GetByIdAsync(id);
             if (category == null)
             {
-                return ServiceResult.Fail("Product not found", HttpStatusCode.NotFound);
+                return ServiceResult.Fail("Category not found", HttpStatusCode.NotFound);
             }
+
+            // Mevcut entity'ye erişim kontrolü
+            if (!CanAccessEntity(category.CompanyId, category.BranchId))
+            {
+                return ServiceResult.Fail("Bu kategoriye erişim yetkiniz bulunmamaktadır.", HttpStatusCode.Forbidden);
+            }
+
+            // Yeni veriler için erişim kontrolü
+            var accessValidation = ValidateEntityAccess(request.CompanyId, request.BranchId);
+            if (!accessValidation.IsSuccess)
+            {
+                return ServiceResult.Fail(accessValidation.ErrorMessage!, accessValidation.Status);
+            }
+
             category.Name = request.Name;
             category.Code = request.Code;
             category.CompanyId = request.CompanyId;
@@ -48,12 +89,29 @@ namespace App.Services.CategoryServices
             categoryRepository.Update(category);
             await unitOfWork.SaveChangesAsync();
             return ServiceResult.Success(HttpStatusCode.NoContent);
-
         }
 
         public async Task<ServiceResult<List<CategoryDto>>> GetAllList()
         {
             var categories = await categoryRepository.GetAllWithDetailsAsync();
+
+            // Admin değilse, sadece kendi company/branch verilerine erişebilir
+            if (!IsAdmin())
+            {
+                var userCompanyId = GetUserCompanyId();
+                var userBranchId = GetUserBranchId();
+
+                if (userCompanyId.HasValue)
+                {
+                    categories = categories.Where(c => c.CompanyId == userCompanyId.Value).ToList();
+                }
+
+                // User rolü için branch kontrolü
+                if (IsUser() && userBranchId.HasValue)
+                {
+                    categories = categories.Where(c => c.BranchId == userBranchId.Value).ToList();
+                }
+            }
 
             var stockcardAsDto = categories.Select(p => new CategoryDto(
                 p.Id,
@@ -64,16 +122,21 @@ namespace App.Services.CategoryServices
                 p.Company.Name,
                 p.Branch.Id,
                 p.Branch.Name,
-                p.User.FullName,
+                p.User?.FullName ?? "",
                 p.CreateDate
             )).ToList();
-
 
             return ServiceResult<List<CategoryDto>>.Success(stockcardAsDto);
         }
 
         public async Task<ServiceResult> DeleteAsync(int id)
         {
+            // User rolü delete işlemi yapamaz
+            if (IsUser())
+            {
+                return ServiceResult.Fail("Kategori silme yetkiniz bulunmamaktadır.", HttpStatusCode.Forbidden);
+            }
+
             // Category'i navigation property'leri ile birlikte al
             var category = await categoryRepository.Where(c => c.Id == id)
                 .Include(c => c.StockCards)
@@ -85,6 +148,12 @@ namespace App.Services.CategoryServices
 
             if (category == null)
                 return ServiceResult.Fail("Category not found", HttpStatusCode.NotFound);
+
+            // Entity'ye erişim kontrolü
+            if (!CanAccessEntity(category.CompanyId, category.BranchId))
+            {
+                return ServiceResult.Fail("Bu kategoriye erişim yetkiniz bulunmamaktadır.", HttpStatusCode.Forbidden);
+            }
 
             // Category soft delete
             category.IsActive = false;

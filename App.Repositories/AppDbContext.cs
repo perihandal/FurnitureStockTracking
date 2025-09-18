@@ -15,7 +15,7 @@ using App.Repositories.UserRoles;
 using App.Repositories.Roles;
 using App.Repositories.PriceHistories;
 using App.Repositories.WarehouseStocks;
-using App.Repositories.TransferRequests;
+// ...existing code...
 
 namespace App.Repositories
 {
@@ -40,7 +40,7 @@ namespace App.Repositories
         public DbSet<User> Users { get; set; } = default!;
         public DbSet<UserRole> UserRoles { get; set; } = default!;
         public DbSet<Role> Roles { get; set; } = default!;
-        public DbSet<TransferRequest> TransferRequests { get; set; } = default!;
+    // TransferRequest kaldırıldı
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
