@@ -1,8 +1,13 @@
 ﻿using App.Services.WareHouseStockServices;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using App.API.Auth;
 
 namespace App.API.Controllers
 {
+    [Authorize(Roles = "Admin,Editor,User")]
+    [CompanyAuthorize] // Şirket bazlı filtreleme
+    [WarehouseAuthorize] // Depo bazlı yetkilendirme
     public class WarehouseStockController : CustomBaseController
     {
         private readonly IWarehouseStockService _warehouseStockService;

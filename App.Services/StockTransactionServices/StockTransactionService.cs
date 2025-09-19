@@ -273,17 +273,22 @@ public class StockTransactionService : BaseService, IStockTransactionService
         var stock = await _warehouseStockRepository.GetByWarehouseAndStockCardAsync(warehouseId, stockCardId);
         if (stock == null)
         {
+            // Yeni kayıt oluştur ve direkt quantity'yi set et
             stock = new WarehouseStock
             {
                 WarehouseId = warehouseId,
                 StockCardId = stockCardId,
-                Quantity = 0
+                Quantity = quantity // Direkt quantity'yi set et
             };
             await _warehouseStockRepository.AddAsync(stock);
         }
-
-        stock.Quantity += quantity;
-        _warehouseStockRepository.Update(stock);
+        else
+        {
+            // Mevcut kayıt varsa quantity'yi artır ve güncelle
+            stock.Quantity += quantity;
+            _warehouseStockRepository.Update(stock);
+        }
+        
         return ServiceResult.Success();
     }
 
