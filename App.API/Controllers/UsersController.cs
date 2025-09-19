@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using App.Repositories;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace App.API.Controllers
 {
     [ApiController]
     [Route("users")]
-    [Authorize(Roles = "Admin")]
     public class UsersController(IUserRepository userRepository, IUnitOfWork unitOfWork) : ControllerBase
     {
         public record AssignCompanyRequest(int CompanyId, int? BranchId);
@@ -17,6 +17,7 @@ namespace App.API.Controllers
         public record UpdateUserRequest(string FullName, string Email, bool IsActive, int? CompanyId, int? BranchId, List<string> Roles);
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll()
         {
             var users = await userRepository.GetAll()
@@ -38,6 +39,7 @@ namespace App.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateUserRequest request)
         {
             var user = await userRepository.GetAll()
@@ -61,6 +63,7 @@ namespace App.API.Controllers
         }
 
         [HttpPut("{id}/toggle-status")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var user = await userRepository.GetByIdAsync(id);
@@ -103,6 +106,7 @@ namespace App.API.Controllers
         }
 
         [HttpPut("{id}/assign-company")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AssignCompany(int id, [FromBody] AssignCompanyRequest request)
         {
             var user = await userRepository.GetByIdAsync(id);
@@ -119,6 +123,7 @@ namespace App.API.Controllers
         }
 
         [HttpPut("{id}/remove-company")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RemoveFromCompany(int id)
         {
             var user = await userRepository.GetByIdAsync(id);
@@ -149,6 +154,83 @@ namespace App.API.Controllers
                     Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList()
                 }).ToListAsync();
             return Ok(users);
+        }
+
+        [HttpGet("profile")]
+        [Authorize] // Sadece giriş yapmış olması yeterli, rol kontrolü yok
+        public async Task<IActionResult> GetMyProfile()
+        {
+            // JWT token'dan kullanıcı ID'sini al
+            Console.WriteLine($"Profile endpoint - All claims: {string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+            
+            var userIdClaim = User.FindFirst("userId")?.Value ?? 
+                             User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ??
+                             User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            Console.WriteLine($"UserIdClaim: {userIdClaim}");
+            
+            if (!int.TryParse(userIdClaim, out int userId))
+            {
+                Console.WriteLine("Failed to parse userId from token");
+                return Unauthorized();
+            }
+
+            var user = await userRepository.GetAll()
+                .Include(u => u.Company)
+                .Include(u => u.Branch)
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+                
+            if (user == null)
+                return NotFound();
+
+            return Ok(new { 
+                user.Id, 
+                user.Username, 
+                user.FullName, 
+                user.Email, 
+                user.IsActive,
+                Company = user.Company != null ? new { user.Company.Id, user.Company.Name, user.Company.Code } : null,
+                Branch = user.Branch != null ? new { user.Branch.Id, user.Branch.Name } : null,
+                Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
+            });
+        }
+
+        [HttpGet("my-status")]
+        [Authorize] // Sadece giriş yapmış olması yeterli
+        public async Task<IActionResult> GetMyStatus()
+        {
+            Console.WriteLine($"My-status endpoint - All claims: {string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+            
+            var userIdClaim = User.FindFirst("userId")?.Value ?? 
+                             User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ??
+                             User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            Console.WriteLine($"UserIdClaim: {userIdClaim}");
+            
+            if (!int.TryParse(userIdClaim, out int userId))
+            {
+                Console.WriteLine("Failed to parse userId from token in my-status");
+                return Unauthorized();
+            }
+
+            var user = await userRepository.GetAll()
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+                
+            if (user == null)
+                return NotFound();
+
+            return Ok(new { 
+                userId = user.Id,
+                isActive = user.IsActive,
+                roles = user.UserRoles.Select(ur => ur.Role.Name).ToList(),
+                hasAdminRole = user.UserRoles.Any(ur => ur.Role.Name == "Admin"),
+                hasEditorRole = user.UserRoles.Any(ur => ur.Role.Name == "Editor"),
+                hasUserRole = user.UserRoles.Any(ur => ur.Role.Name == "User")
+            });
         }
     }
 }

@@ -133,6 +133,7 @@ namespace App.Services.Auth
             user.PasswordSalt = salt;
             user.PasswordHash = hash;
             userRepository.Update(user);
+            await unitOfWork.SaveChangesAsync(); // ✅ Bu satır eksikti!
             return (true, null);
         }
         private static bool VerifyPassword(string password, byte[] salt, byte[] hash)

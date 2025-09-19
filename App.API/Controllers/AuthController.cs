@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using App.Services.CompanyServices;
 using App.Repositories.Users;
+using System.Security.Claims;
 
 namespace App.API.Controllers
 {
@@ -102,13 +103,28 @@ namespace App.API.Controllers
             return Ok(new LoginResponse(token, exp, rt.RefreshToken!, rt.ExpiresAtUtc!.Value, userInfo));
         }
 
+        [Microsoft.AspNetCore.Authorization.Authorize]
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            // userId, token claimlerinden alınır
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            Console.WriteLine("Change-password endpoint called");
+            Console.WriteLine($"User.Identity.IsAuthenticated: {User.Identity?.IsAuthenticated}");
+            Console.WriteLine($"All claims: {string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+            
+            // userId, token claimlerinden alınır - birden fazla claim türünü deneyelim
+            var userIdClaim = User.Claims.FirstOrDefault(c => 
+                c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub || 
+                c.Type == "sub" || 
+                c.Type == System.Security.Claims.ClaimTypes.NameIdentifier ||
+                c.Type == "userId")?.Value;
+                
+            Console.WriteLine($"UserIdClaim: {userIdClaim}");
+            
             if (!int.TryParse(userIdClaim, out var userId))
-                return Unauthorized();
+            {
+                Console.WriteLine("Failed to parse userId");
+                return Unauthorized(new { error = "User ID not found or invalid", allClaims = User.Claims.Select(c => new { c.Type, c.Value }).ToList() });
+            }
 
             var result = await authService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
             if (!result.Success)
