@@ -14,6 +14,7 @@ namespace App.API.Controllers
     {
         public record AssignCompanyRequest(int CompanyId, int? BranchId);
         public record CreateUserRequest(string Username, string FullName, string Email, string Password, int? CompanyId, int? BranchId);
+        public record UpdateUserRequest(string FullName, string Email, bool IsActive, int? CompanyId, int? BranchId, List<string> Roles);
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -34,6 +35,46 @@ namespace App.API.Controllers
                     Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList()
                 }).ToListAsync();
             return Ok(users);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateUserRequest request)
+        {
+            var user = await userRepository.GetAll()
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == id);
+                
+            if (user == null)
+                return NotFound();
+
+            // Kullanıcı bilgilerini güncelle
+            user.FullName = request.FullName;
+            user.Email = request.Email;
+            user.IsActive = request.IsActive;
+            user.CompanyId = request.CompanyId;
+            user.BranchId = request.BranchId;
+
+            userRepository.Update(user);
+            await unitOfWork.SaveChangesAsync();
+
+            return Ok(new { message = "Kullanıcı başarıyla güncellendi." });
+        }
+
+        [HttpPut("{id}/toggle-status")]
+        public async Task<IActionResult> ToggleStatus(int id)
+        {
+            var user = await userRepository.GetByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            user.IsActive = !user.IsActive;
+            userRepository.Update(user);
+            await unitOfWork.SaveChangesAsync();
+
+            return Ok(new { 
+                message = $"Kullanıcı {(user.IsActive ? "aktif" : "pasif")} duruma getirildi.",
+                isActive = user.IsActive 
+            });
         }
 
         [HttpGet("{id}")]
