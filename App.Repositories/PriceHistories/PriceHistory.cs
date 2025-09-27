@@ -19,6 +19,6 @@ namespace App.Repositories.PriceHistories
         public bool IsActive = true;
 
         public int PriceDefinitionId { get; set; }
-        public PriceDefinition PriceDefinition { get; set; }
+        public PriceDefinition? PriceDefinition { get; set; }
     }
 }

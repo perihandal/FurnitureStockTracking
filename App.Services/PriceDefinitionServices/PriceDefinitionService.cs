@@ -105,6 +105,40 @@ namespace App.Services.PriceDefinitionServices
                 return ServiceResult<CreatePriceDefinitionResponse>.Fail("User role cannot create price definitions", HttpStatusCode.Forbidden);
             }
 
+            // Otomatik update modu: aynı (StockCardId, PriceType) varsa ekleme yerine güncelle
+            var existing = await _priceDefinitionRepository.GetByStockCardAndTypeAsync(request.StockCardId, request.PriceType);
+            if (existing != null)
+            {
+                var oldPrice = existing.Price;
+
+                // Fiyat değiştiyse history kaydı oluştur
+                if (oldPrice != request.Price)
+                {
+                    var history = new PriceHistory
+                    {
+                        PriceDefinitionId = existing.Id,
+                        PriceType = existing.PriceType,
+                        OldPrice = oldPrice,
+                        NewPrice = request.Price,
+                        ChangeDate = DateTime.UtcNow
+                    };
+                    await _priceHistoryRepository.AddAsync(history);
+                }
+
+                existing.Price = request.Price;
+                existing.Currency = request.Currency;
+                existing.ValidFrom = request.ValidFrom;
+                existing.ValidTo = request.ValidTo;
+                existing.UserId = request.UserId;
+                existing.IsActive = existing.ValidTo == null || existing.ValidTo > DateTime.UtcNow;
+
+                _priceDefinitionRepository.Update(existing);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Upsert davranışı: Var olan güncellendiğini belirt
+                return ServiceResult<CreatePriceDefinitionResponse>.Success(new CreatePriceDefinitionResponse(existing.Id));
+            }
+
             var priceDefinition = new PriceDefinition
             {
                 PriceType = request.PriceType,

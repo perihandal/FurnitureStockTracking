@@ -40,8 +40,7 @@ namespace App.Repositories
         public DbSet<User> Users { get; set; } = default!;
         public DbSet<UserRole> UserRoles { get; set; } = default!;
         public DbSet<Role> Roles { get; set; } = default!;
-    // TransferRequest kaldırıldı
-
+    
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

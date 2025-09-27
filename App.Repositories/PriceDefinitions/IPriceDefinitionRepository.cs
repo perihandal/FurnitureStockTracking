@@ -9,6 +9,7 @@ namespace App.Repositories.PriceDefinitions
    public interface IPriceDefinitionRepository: IGenericRepository<PriceDefinition>
     {
         Task<List<PriceDefinition>> GetAllWithDetailsAsync();
-        Task<PriceDefinition> GetAllWithDetailsAsync(int id);
+    Task<PriceDefinition?> GetAllWithDetailsAsync(int id);
+        Task<PriceDefinition?> GetByStockCardAndTypeAsync(int stockCardId, PriceType priceType);
     }
 }

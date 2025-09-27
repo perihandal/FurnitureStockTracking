@@ -10,10 +10,9 @@ using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// JWT claim mapping'i devre dışı bırak (sub claim'ini preserve etmek için)
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-// CORS Policy ekle
+// CORS Policy 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -62,8 +61,6 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddRepositories(builder.Configuration)
                 .AddServices(builder.Configuration);
-// Seed ekle
-//builder.Services.AddHostedService<App.API.Startup.SeedHostedService>();
 
 // JWT Options
 builder.Services.Configure<TokenOptions>(builder.Configuration.GetSection("Jwt"));
@@ -87,7 +84,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true
         };
         
-        // Debug için event handler'lar ekleyelim
+        // Debug için event handler
         options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
         {
             OnAuthenticationFailed = context =>
@@ -117,7 +114,7 @@ if (app.Environment.IsDevelopment())
 }
 
 
-// CORS middleware'ini en ba�ta ekle
+// CORS middleware
 app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
